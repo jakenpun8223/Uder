@@ -1,11 +1,11 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const cors = require('cors');
-const http = require('http'); // Native Node.js module
-const { Server } = require('socket.io'); // Import Socket.io
-const connectDB = require('./config/db');
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import http from 'http';
+import { Server } from 'socket.io';
+import connectDB from './config/db.js'; // Ensure you added 'export default' in db.js
 
-// 1. Load Environment Variables (must be at the top)
+// 1. Load Environment Variables
 dotenv.config();
 
 // 2. Connect to Database
