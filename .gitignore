@@ -1,0 +1,32 @@
+# --- Dependencies (Matches client AND server) ---
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs
+*.log
+
+# --- Security (CRITICAL for Backend) ---
+# Your current file missed this. You MUST add it.
+.env
+.env.local
+.env.production
+.env.test
+
+# --- Frontend Build ---
+dist
+dist-ssr
+*.local
+
+# --- Editor & OS Junk ---
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
