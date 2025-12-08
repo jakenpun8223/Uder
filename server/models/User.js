@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { lowercase } from "zod";
+
 
 const userSchema = new mongoose.Schema({
         name: {
