@@ -17,7 +17,7 @@ const app = express();
 // 3. Middleware
 app.use(cors()); // Allow frontend to talk to backend
 app.use(express.json());
-app.use('api/products', productRoutes) // Allow backend to read JSON data
+app.use('/api/products', productRoutes) // Allow backend to read JSON data
 
 // 4. Real-Time Setup (Socket.io)
 const server = http.createServer(app); // Wrap Express in a raw HTTP server
