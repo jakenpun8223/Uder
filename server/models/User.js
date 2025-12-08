@@ -19,7 +19,21 @@ const userSchema = new mongoose.Schema({
             required: true,
         }
     },
-    {timestamps: true}
+    {
+        timestamps: true,
+        toJSON: {
+            transform(doc, ret) {
+                delete ret.password;
+                return ret;
+            }
+        },
+        toObject: {
+            transform(doc, ret) {
+                delete ret.password;
+                return ret;
+            }
+        }
+    }
 );
 
 export default mongoose.model('user', userSchema);
