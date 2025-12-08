@@ -3,7 +3,8 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
-import connectDB from './config/db.js'; // Ensure you added 'export default' in db.js
+import connectDB from './config/db.js';
+import productRoutes from './routes/productRoutes.js' // Ensure you added 'export default' in db.js
 
 // 1. Load Environment Variables
 dotenv.config();
@@ -15,7 +16,8 @@ const app = express();
 
 // 3. Middleware
 app.use(cors()); // Allow frontend to talk to backend
-app.use(express.json()); // Allow backend to read JSON data
+app.use(express.json());
+app.use('api/products', productRoutes) // Allow backend to read JSON data
 
 // 4. Real-Time Setup (Socket.io)
 const server = http.createServer(app); // Wrap Express in a raw HTTP server
