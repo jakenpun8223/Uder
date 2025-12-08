@@ -15,7 +15,7 @@ server/
 │   └── Table.js           # Schema for Tables
 ├── routes/
 │   ├── authRoutes.js      # API endpoints: POST /api/auth/login
-│   ├── menuRoutes.js      # API endpoints: GET /api/menu, POST /api/menu
+│   ├── productRoutes.js      # API endpoints: GET /api/menu, POST /api/menu
 │   └── orderRoutes.js     # API endpoints: POST /api/orders
 ├── middleware/
 [cite_start]│   └── authMiddleware.js  # Checks the JWT token before allowing access [cite: 54]
