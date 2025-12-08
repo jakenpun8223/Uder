@@ -21,6 +21,10 @@ const orderSchema = new mongoose.Schema({
             price: Number
         }
     ],
+    version: {// if table wants to add to the order
+        type: Number,
+        default: 1,
+    },
     totalAmount: {
         type: Number,
         required: true
