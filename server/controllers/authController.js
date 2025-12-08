@@ -7,17 +7,16 @@ const SALT_ROUNDS = 10; // >= 10 as required
 
 export const register = async (req, res) => {
   try {
-    const parsed = registerSchema.parse(req.body);
-    const { name, email, password } = parsed;
+    const parsed = registerSchema.safeParse(req.body);
 
-    // check uniqueness
-    const existing = await User.findOne({ email });
-    if (existing) {
-      // do not reveal whether email exists; but here spec asks for 409
-      return res
-        .status(409)
-        .json({ success: false, error: "wrong input try again" });
+    if(!parsed.success){
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: result.error.errors.map(e => e.message)
+      });
     }
+
+    const { name, email, password } = parsed.data;
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
