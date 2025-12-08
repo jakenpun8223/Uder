@@ -10,7 +10,7 @@ server/
 │   └── orderController.js # Logic for creating/updating orders
 ├── models/
 │   ├── User.js            # Schema for Staff/Admins
-│   ├── Menu.js            # Schema for Menu Items (Name, Price, Allergens)
+│   ├── Product.js            # Schema for Menu Items (Name, Price, Allergens)
 │   ├── Order.js           # Schema for Orders (Table #, Items, Status)
 │   └── Table.js           # Schema for Tables
 ├── routes/
