@@ -25,17 +25,15 @@ export const register = async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-    const created = await User.create({ name, email, password: passwordHash });
-
-    const safeUser = {
-      id: created._id,
-      name: created.name,
-      email: created.email,
-    };
+    const user = await User.create({
+      name,
+      email,
+      passwordHash
+    });
 
     return res
       .status(201)
-      .json({ success: true, message: "User created", user: safeUser });
+      .json({ message: 'User registered successfully', user});
   } catch (err) {
     if (err instanceof ZodError) {
       const issues = err.errors
