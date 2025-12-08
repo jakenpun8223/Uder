@@ -12,7 +12,7 @@ const productSchema = new mongoose.Schema({
     category: {
         type: String,
         required: true,
-        enum: ['Main','Sushi']
+        enum: ['Main','Sushi'], // should be dynamic
     },
     description: {
         type: String
@@ -20,7 +20,11 @@ const productSchema = new mongoose.Schema({
     isAvailable: {
         type: Boolean,
         default: true
-    }
+    },
+    alergies: [{
+        required: true,
+        enum: ['lactos', 'gluten', 'shellfish', 'penut', 'nuts', 'soy'] // TODO: add relevts and do a spell check
+    }]
 }, { timestamps: true });
 
 const Product = mongoose.model('Product', productSchema);
