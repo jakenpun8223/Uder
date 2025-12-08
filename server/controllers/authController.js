@@ -18,6 +18,11 @@ export const register = async (req, res) => {
 
     const { name, email, password } = parsed.data;
 
+    const existingUser = await User.findOne({ email }); 
+    if(existingUser){
+      return res.status(409).json({ error: 'Email already exist'});
+    }
+
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
     const created = await User.create({ name, email, password: passwordHash });
