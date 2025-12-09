@@ -47,7 +47,7 @@ app.use('/api/products', productRoutes); // Customer (Menu)
 app.use('/api/auth', authRoutes); // Login & Register
 app.use('/api/users', userRoutes); // Admin (Manage Staff)
 app.use('/api/orders', orderRoutes); // Waiter/Kitchen (Orders)
-app.usr('/api/tables', tableRoutes);
+app.use('/api/tables', tableRoutes);
 
 // 4. Real-Time Setup (Socket.io)
 const server = http.createServer(app); // Wrap Express in a raw HTTP server
