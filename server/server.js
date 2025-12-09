@@ -29,7 +29,7 @@ app.use(helmet()) // Hides server info (e.g. "X-Powered-By: Express")
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // Limit each IP to 10 requests per window
-  message: "Too mant login attempts, please try again later"
+  message: "Too many login attempts, please try again later"
 });
 app.use('/api/auth', authLimiter); // Apply ONLY to auth routes
 
