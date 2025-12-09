@@ -15,7 +15,7 @@ const tableSchema = new mongoose.Schema({
         enum: ['available', 'occupied', 'reserved'],
         default: 'available'
     },
-    needAssistance: {
+    needsAssistance: {
         type: Boolean,
         default: false
     },
