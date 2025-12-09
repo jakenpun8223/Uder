@@ -66,8 +66,12 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    if(!process.env.JWT_SECRET){
+      throw new Error("FATAL ERROR: JWT_SECRET is not defined.");
+    }
+
     // Generate JWT token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || "fallback_secret", {
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d"
     });
 
