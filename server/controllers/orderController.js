@@ -39,7 +39,7 @@ export const createOrder = async (req,res) => {
 }
 
 // [WAITER] Add items to an existing order (e.g. Table wants desert)
-export const addItemsOrder = async (req,res) => {
+export const addItemsToOrder = async (req,res) => {
     try{
         const { id } = req.params; // Order ID
         const { items } = req.body; // New items to add
