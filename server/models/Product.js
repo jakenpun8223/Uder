@@ -9,12 +9,12 @@ const productSchema = new mongoose.Schema({
     price: {
         type: Number,
         required: true,
-        min: 0 // Prevent negative prices
+        min: 0
     },
     category: {
         type: String,
         required: true,
-        enum: ['Main', 'Sushi', 'Drinks', 'Dessert', 'Starters'], // Expanded categories
+        enum: ['Main', 'Sushi', 'Drinks', 'Dessert', 'Starters'],
     },
     description: {
         type: String,
@@ -26,13 +26,13 @@ const productSchema = new mongoose.Schema({
     },
     allergens: [{
         type: String,
-        enum: ['lactose', 'gluten', 'shellfish', 'peanut', 'nuts', 'soy', 'eggs', 'fish', 'sesame'] // Corrected spelling
+        enum: ['lactose', 'gluten', 'shellfish', 'peanut', 'nuts', 'soy', 'eggs', 'fish', 'sesame']
     }],
     ingredients: [{ 
         type: String,
-        trim: true
+        trim: true,
+        required: true 
     }]
 }, { timestamps: true });
 
-const Product = mongoose.model('Product', productSchema);
-export default Product;
+export default mongoose.model('Product', productSchema);
