@@ -13,6 +13,7 @@ import productRoutes from './routes/productRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
+import tableRoutes from './routes/tableRoutes.js';
 
 // 1. Load Environment Variables
 dotenv.config();
@@ -46,6 +47,7 @@ app.use('/api/products', productRoutes); // Customer (Menu)
 app.use('/api/auth', authRoutes); // Login & Register
 app.use('/api/users', userRoutes); // Admin (Manage Staff)
 app.use('/api/orders', orderRoutes); // Waiter/Kitchen (Orders)
+app.usr('/api/tables', tableRoutes);
 
 // 4. Real-Time Setup (Socket.io)
 const server = http.createServer(app); // Wrap Express in a raw HTTP server
