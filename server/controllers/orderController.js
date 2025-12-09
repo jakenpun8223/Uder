@@ -4,7 +4,7 @@ import Product from '../models/Product.js'
 // [WAITER] create new order for table 
 export const createOrder = async (req,res) => {
     try{
-        const {kq, tableNumber, items } = req.body;
+        const { tableNumber, items } = req.body;
         // items expected format: [{ product: "productId", quantity: 2 }]
 
         let totalAmount = 0;
