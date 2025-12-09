@@ -1,11 +1,23 @@
-import Order from '../models/Order.js'
-import Product from '../models/Product.js'
+import Order from '../models/Order.js';
+import Product from '../models/Product.js';
+import Table from '../models/Table.js';
 
 // [WAITER] create new order for table 
 export const createOrder = async (req,res) => {
     try{
         const { tableNumber, items } = req.body;
         // items expected format: [{ product: "productId", quantity: 2 }]
+
+        // VALIDATION: Does this table exist?
+        const table = await Table.findOne({ tableNumber });
+        if(!table){
+            return res.status(404).json({ message: `Table ${tableNumber} does not exist in system.` });
+        }
+
+        // VALIDATION: Is it already occupied?
+        if(table.status === 'occupied'){
+            return res.status(400).json({ message: `Table ${tableNumber} is already occupied. Add items to the existing order instead.` });
+        }
 
         let totalAmount = 0;
         const finalItems = [];
@@ -29,8 +41,13 @@ export const createOrder = async (req,res) => {
             items: finalItems,
             totalAmount
         });
-
         await newOrder.save();
+
+        // CRITICAL: Mark as Occupied
+        table.status = 'occupied';
+        table.currentOrder = newOrder._id;
+        await table.save();
+        
         res.status(201).json(newOrder);
     }
     catch(error){

@@ -1,23 +1,20 @@
 import express from 'express';
-import {
-    createOrder,
-    getAllOrders,
-    updateOrderStatus,
-    addItemsToOrder
-} from '../controllers/orderController.js';
+import { createOrder, getAllOrders, updateOrderStatus, addItemsToOrder } from '../controllers/orderController.js';
+import { protect } from '../middleware/authMiddleware.js'; // Import protect
 
 const router = express.Router();
 
-// WAITER: Start a new table order
-router.post('/', createOrder);
+// WAITER ONLY: Start a new table order
+// Added 'protect' so unauthenticated customers cannot create orders
+router.post('/', protect, createOrder); 
 
-// WAITER: Add items to existing order (e.g. /api/orders/65a2b.../add)
-router.post('/:id/add', addItemsToOrder);
+// WAITER: Add items
+router.post('/:id/add', protect, addItemsToOrder);
 
-// KITCHEN/ADMIN: See all orders
-router.get('/', getAllOrders);
+// KITCHEN: Get orders
+router.get('/', protect, getAllOrders);
 
-// CHEF/WAITER: Change status
-router.patch('/:id/status', updateOrderStatus);
+// CHEF: Update status
+router.patch('/:id/status', protect, updateOrderStatus);
 
 export default router;
