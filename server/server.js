@@ -4,6 +4,7 @@ import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
 import connectDB from './config/db.js';
+import cookieParser from 'cookie-parser';
 
 // Import routes
 import productRoutes from './routes/productRoutes.js';
