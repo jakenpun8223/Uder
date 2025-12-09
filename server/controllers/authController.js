@@ -2,7 +2,6 @@ import bcrypt from "bcrypt";
 import jwt from 'jsonwebtoken';
 import User from "../models/User.js";
 import { registerSchema, loginSchema } from "../validations/authSchema.js";
-import { id } from "zod/v4/locales";
 
 const SALT_ROUNDS = 10; // >= 10 as required
 
