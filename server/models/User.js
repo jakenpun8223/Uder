@@ -1,45 +1,42 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema(
-  {
+const userSchema = new mongoose.Schema({
     name: {
-      type: String,
-      required: true,
-      trim: true,
+        type: String,
+        required: true,
+        trim: true,
     },
     email: {
-      type: String,
-      required: true,
-      trim: true,
-      unique: true,
-      lowercase: true,
-      match: [/^\S+@\S+\.\S+$/, "Please use a valid email address"], // Basic email validation
-    },
+        type: String,
+        required: true,
+        unique: true, // Critical for DB integrity
+        trim: true,
+        lowercase: true,
+    }, 
     password: {
-      type: String,
-      required: true,
+        type: String,
+        required: true,
+        // Note: No length/complexity validation here because this stores the HASH, not the plain text.
     },
     role: {
-      type: String,
-      enum: ["admin", "staff", "kitchen"], // Roles for permission management
-      default: "staff",
-    },
-  },
-  {
+        type: String,
+        enum: ['admin', 'staff', 'kitchen'],
+        default: 'staff' // Default role is staff
+    }
+}, {
     timestamps: true,
     toJSON: {
-      transform(doc, ret) {
-        delete ret.password;
-        return ret;
-      },
+        transform(doc, ret) {
+            delete ret.password; // Never send password hash to frontend
+            return ret;
+        }
     },
     toObject: {
       transform(doc, ret) {
         delete ret.password;
         return ret;
       },
-    },
-  }
-);
+    }
+});
 
-export default mongoose.model("User", userSchema);
+export default mongoose.model('User', userSchema);

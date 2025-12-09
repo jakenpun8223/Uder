@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 const orderSchema = new mongoose.Schema({
     tableNumber: {
         type: Number,
-        required: true
+        required: true,
+        min: 1
     },
     items: [
         {
@@ -14,24 +15,25 @@ const orderSchema = new mongoose.Schema({
             },
             quantity: {
                 type: Number,
-                default: 1
+                default: 1,
+                min: 1
             },
-            // Store name/price snapshot in case menu changes later
-            name: String,
-            price: Number
+            name: String, // Snapshot of product name
+            price: Number // Snapshot of product price
         }
     ],
-    version: {// if table wants to add to the order
+    version: {
         type: Number,
         default: 1,
     },
     totalAmount: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
     status: {
         type: String,
-        enum: ['pending', 'preparing', 'served', 'paid'],
+        enum: ['pending', 'preparing', 'ready', 'served', 'paid', 'cancelled'],
         default: 'pending'
     }
 }, { timestamps: true });

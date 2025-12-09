@@ -3,33 +3,36 @@ import mongoose from "mongoose";
 const productSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     price: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
     category: {
         type: String,
         required: true,
-        enum: ['Main','Sushi'], // should be dynamic
+        enum: ['Main', 'Sushi', 'Drinks', 'Dessert', 'Starters'],
     },
     description: {
-        type: String
+        type: String,
+        trim: true
     },
     isAvailable: {
         type: Boolean,
         default: true
     },
-    alergies: [{
-        required: true,
-        enum: ['lactos', 'gluten', 'shellfish', 'penut', 'nuts', 'soy'] // TODO: add relevts and do a spell check
-    }],
-    ingridiants: [{// helpful if we want to give the ability to write to the system 'we are out of chicken' and all chicken products will be turned off.
-        required: true,
+    allergens: [{
         type: String,
+        enum: ['lactose', 'gluten', 'shellfish', 'peanut', 'nuts', 'soy', 'eggs', 'fish', 'sesame']
+    }],
+    ingredients: [{ 
+        type: String,
+        trim: true,
+        required: true 
     }]
 }, { timestamps: true });
 
-const Product = mongoose.model('Product', productSchema);
-export default Product;
+export default mongoose.model('Product', productSchema);

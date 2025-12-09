@@ -1,62 +1,49 @@
 import express from 'express';
 import Product from '../models/Product.js';
+import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// --- CUSTOMER ROUTES ---
-
-// 1. GET Menu for Customers (Only show Available items)
+// --- PUBLIC ROUTES (Everyone can see the menu) ---
 router.get('/', async (req, res) => {
-    try{
-        // FILTER: Only find products where isAvailable is TRUE
+    try {
         const menu = await Product.find({ isAvailable: true });
         res.json(menu);
-    }
-    catch(error){
+    } catch(error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// --- CHEF / ADMIN ROUTES ---
+// --- PROTECTED ROUTES (Staff/Admin only) ---
 
-// GET All products (For Chef to see the full list)
-router.get('/all', async (req,res) => {
-    try{
-        // No Filter: Return everything (even unavailable once)
-        const allProducts = await Product.find({});
-        res.json(allProducts);
-    }
-    catch(error){
-        res.status(500).json({ message: error.message });
-    }
+// 1. GET Full list (Kitchen needs to see even unavailable items)
+router.get('/all', protect, authorize('admin', 'kitchen'), async (req,res) => {
+    const allProducts = await Product.find({});
+    res.json(allProducts);
 });
 
-// TOGGLE Availability (Chefs adds/removes item from menu)
-router.patch('/:id/toggle', async (req,res) => {
-    try{
-        const product = await Product.findById(req.params.id);
-        if(!product) return res.status(404).json({ message: "Product not found" });
-
-        // Flip the switch (True -> False, or False -> True)
-        product.isAvailable = !product.isAvailable;
-        await product.save();
-        
-        res.json(product);
-    }
-    catch(error){
+// 2. Add New Item (Admin Only)
+router.post('/', protect, authorize('admin'), async (req,res) => {
+    try {
+        const newProduct = new Product(req.body);
+        await newProduct.save();
+        res.status(201).json(newProduct);
+    } catch(error) {
         res.status(400).json({ message: error.message });
     }
 });
 
-// Create new Product (Add to the master list)
-router.post('/', async (req,res) => {
-    const { name, price, category, description } = req.body;
-    try{
-        const newProduct = new Product({ name, price, category, description });
-        await newProduct.save();
-        res.status(201).json(newProduct);
-    }
-    catch(error){
+// 3. Toggle Availability (Kitchen/Admin)
+router.patch('/:id/toggle', protect, authorize('admin', 'kitchen'), async (req,res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if(!product) return res.status(404).json({ message: "Product not found" });
+
+        product.isAvailable = !product.isAvailable;
+        await product.save();
+        
+        res.json(product);
+    } catch(error) {
         res.status(400).json({ message: error.message });
     }
 });
