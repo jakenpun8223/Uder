@@ -57,7 +57,7 @@ export const addItemsToOrder = async (req,res) => {
                     name: productDoc.name,
                     price: productDoc.price
                 });
-                order.tableNumber += productDoc.price * item.quantity;
+                order.totalAmount += productDoc.price * item.quantity;
             }
         }
 
