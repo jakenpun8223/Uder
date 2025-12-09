@@ -1,6 +1,4 @@
 import jwt from 'jsonwebtoken';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 
 // 1. Verify User is Logged In
 export const protect = async (req, res, next) => {
