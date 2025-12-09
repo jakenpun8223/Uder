@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
+import jwt from 'jsonwebtoken';
 import User from "../models/User.js";
 import { registerSchema, loginSchema } from "../validations/authSchema.js";
+import { id } from "zod/v4/locales";
 
 const SALT_ROUNDS = 10; // >= 10 as required
 
@@ -27,7 +29,7 @@ export const register = async (req, res) => {
     const user = await User.create({
       name,
       email,
-      passwordHash
+      password: passwordHash
     });
 
     return res
@@ -42,7 +44,7 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     // Validate input
-    const result = loginSchema.parse(req.body);
+    const result = loginSchema.safeParse(req.body);
     if(!result.success){
       return res.status(400).json({
         error: 'Validation failed',
@@ -59,13 +61,19 @@ export const login = async (req, res) => {
     }
 
     // Verify password
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    const isMatch = await bcrypt.compare(password, user.password);
     if(!isMatch){
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // Generate JWT token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || "fallback_secret", {
+      expiresIn: "1d"
+    });
+
     res.status(200).json({
       message: 'Login successful',
+      token,
       user
     });
 
