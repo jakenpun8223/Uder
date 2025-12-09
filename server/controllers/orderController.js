@@ -70,3 +70,18 @@ export const addItemsOrder = async (req,res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// [KITCHEN / WAITER] Get all orders
+export const getAllOrders = async (req,res) => {
+    try{
+        // Return all orders sorted by newest first
+        // Populate 'product' to get details like allergies/category
+        const orders = await Order.find()
+            .sort({ createdAt: -1 })
+            .populate('items.product');
+        res.json(orders);
+    }
+    catch(error){
+        res.status(500).json({ message: error.message });
+    }
+};
