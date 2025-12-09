@@ -4,8 +4,12 @@ import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
 import connectDB from './config/db.js';
+
+// Import routes
 import productRoutes from './routes/productRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
 
 // 1. Load Environment Variables
 dotenv.config();
@@ -19,8 +23,12 @@ const app = express();
 app.use(cors()); // Allow frontend to talk to backend
 app.use(express.json());
 app.use(cookieParser());
-app.use('/api/products', productRoutes);
-app.use('/api/auth', authRoutes);
+
+// --- ROUTES ---
+app.use('/api/products', productRoutes); // Customer (Menu)
+app.use('/api/auth', authRoutes); // Login & Register
+app.use('/api/users', userRoutes); // Admin (Manage Staff)
+app.use('/api/orders', orderRoutes); // Waiter/Kitchen (Orders)
 
 // 4. Real-Time Setup (Socket.io)
 const server = http.createServer(app); // Wrap Express in a raw HTTP server
@@ -33,7 +41,7 @@ const io = new Server(server, {
 
 // Listen for real-time connections
 io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
+  console.log('User connected:', socket.id);
 
   // Example: Listen for a new order
   socket.on('send_order', (data) => {
