@@ -85,3 +85,19 @@ export const getAllOrders = async (req,res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// [CHEF / CASHIER] Update status (Pending -> Preparing -> Served -> Paid)
+export const updateOrderStatus = async (req,res) => {
+    try{
+        const { status } = req.body;
+        const order = await Order.findByIdAndUpdate(
+            req.params.id,
+            { status },
+            { new: true }
+        );
+        res.json(order);
+    }
+    catch(error){
+        res.status(500).json({ message: error.message });
+    }
+};
