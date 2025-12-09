@@ -18,6 +18,7 @@ const app = express();
 // 3. Middleware
 app.use(cors()); // Allow frontend to talk to backend
 app.use(express.json());
+app.use(cookieParser());
 app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 
