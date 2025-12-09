@@ -37,3 +37,36 @@ export const createOrder = async (req,res) => {
         res.status(500).json({ message: error.message });
     }
 }
+
+// [WAITER] Add items to an existing order (e.g. Table wants desert)
+export const addItemsOrder = async (req,res) => {
+    try{
+        const { id } = req.params; // Order ID
+        const { items } = req.body; // New items to add
+
+        const order = await Order.findById(id);
+        if(!order) return res.status(404).json({ message: "Order not found" });
+
+        // Calculate and push new items
+        for (const item of items){
+            const productDoc = await Product.findById(item.product);
+            if(productDoc){
+                order.items.push({
+                    product: productDoc._id,
+                    quantity: item.quantity,
+                    name: productDoc.name,
+                    price: productDoc.price
+                });
+                order.tableNumber += productDoc.price * item.quantity;
+            }
+        }
+
+        order.version = (order.version || 1) + 1; // Track changes
+        await order.save();
+
+        res.json(order);
+    }
+    catch(error){
+        res.status(500).json({ message: error.message });
+    }
+};
