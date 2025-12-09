@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import User from "../models/user.model.js";
+import User from "../models/User.js";
 import { registerSchema, loginSchema } from "../validations/authSchema.js";
 
 const SALT_ROUNDS = 10; // >= 10 as required
