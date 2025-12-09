@@ -58,6 +58,8 @@ const io = new Server(server, {
   }
 });
 
+app.set('socketio', io); // Allows routes to access 'io'
+
 // Listen for real-time connections
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
