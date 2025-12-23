@@ -102,3 +102,14 @@ export const logout = (req, res) => {
   });
   res.status(200).json({ success: true, data: {} });
 };
+
+// Check if user is logged in and return their info
+export const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password'); // Exclude password
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
