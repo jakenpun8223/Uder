@@ -10,13 +10,13 @@ const restaurantSchema = new mongoose.Schema({
         required: true
     },
     owner: {
-        type: mongoose.Schema.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
     // We will store staff here or query User model by restaurantId
     staff: [{
-        type: mongoose.Schema.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }],
     isActive: {
