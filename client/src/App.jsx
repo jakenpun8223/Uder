@@ -1,35 +1,54 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import useAuth from './hooks/useAuth'; // We will create this small hook next
+import { io } from 'socket.io-client';
+import { useEffect } from 'react';
+
+// Initialize Socket
+const socket = io('http://localhost:5000');
+
+// --- SECURITY GUARD COMPONENT ---
+// This component wraps pages that need login.
+// If user is NOT logged in, it kicks them to '/login'.
+const ProtectedRoute = () => {
+  const { user, loading } = useAuth();
+  
+  if (loading) return <h1>Loading...</h1>; // Wait for the check to finish
+  
+  return user ? <Outlet /> : <Navigate to="/login" />;
+};
+
+// --- PAGES (Placeholders for now) ---
+const Login = () => <h1>Login Page (To be built)</h1>;
+const KitchenDashboard = () => <h1>Kitchen Dashboard (Private)</h1>;
+const Menu = () => <h1>Menu Page (Public)</h1>;
 
 function App() {
-  const [count, setCount] = useState(0)
+  useEffect(() => {
+    socket.on('connect', () => console.log('Connected to Server:', socket.id));
+  }, []);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <BrowserRouter>
+      {/* 1. Wrap the app in AuthProvider so everyone can access 'user' */}
+      <AuthProvider>
+        <Routes>
+          {/* PUBLIC ROUTES (Anyone can see) */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/menu" element={<Menu />} />
+
+          {/* PROTECTED ROUTES (Only logged in users) */}
+          <Route element={<ProtectedRoute />}>
+              <Route path="/kitchen" element={<KitchenDashboard />} />
+              <Route path="/admin" element={<h1>Admin Panel</h1>} />
+          </Route>
+
+          {/* Catch all - Redirect to menu */}
+          <Route path="*" element={<Navigate to="/menu" />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
