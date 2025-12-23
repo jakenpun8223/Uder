@@ -23,8 +23,16 @@ router.get('/all', protect, authorize('admin', 'kitchen'), async (req,res) => {
 });
 
 // 2. Add New Item (Admin Only)
-router.post('/', protect, authorize('admin'), async (req,res) => {
+router.post('/', protect, authorize('admin'), async (req, res) => {
     try {
+        const { name } = req.body;
+        
+        // CHECK: Does this product already exist?
+        const existingProduct = await Product.findOne({ name });
+        if (existingProduct) {
+            return res.status(400).json({ message: `Product '${name}' already exists.` });
+        }
+
         const newProduct = new Product(req.body);
         await newProduct.save();
         res.status(201).json(newProduct);
