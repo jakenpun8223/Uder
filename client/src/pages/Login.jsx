@@ -1,6 +1,6 @@
 import { useState } from "react";
 import useAuth from "../hooks/useAuth"; // Get the login function
-import { useNavigate } from "react-router-dom"; // For redirection
+import { Link, useNavigate } from "react-router-dom"; // For redirection
 
 const Login = () => {
   const { login } = useAuth();
@@ -75,6 +75,9 @@ const Login = () => {
             Sign In
           </button>
         </form>
+        <div className="mt-4 text-center">
+          <p className="text-gray-600">Don't have an account? <Link to="/register" className="text-primary font-bold hover:underline">Register now!</Link></p>
+        </div>
       </div>
     </div>
   );
