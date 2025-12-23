@@ -88,7 +88,7 @@ router.post('/', protect, authorize('admin'), async (req,res) => {
         const existingTable = await Table.findOne({ tableNumber });
         if(existingTable) return res.status(400).json({ message: "Table already exists" });
 
-        const newTable = new Table.create({ tableNumber, capacity });
+        const newTable = await Table.create({ tableNumber, capacity });
         res.status(201).json(newTable);
     }
     catch(error){
