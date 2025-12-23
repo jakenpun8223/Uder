@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import bcrypt from 'bcrypt';
-import Restaurant from "./Restaurant";
 
 const userSchema = new mongoose.Schema({
     name: {
