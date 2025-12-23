@@ -21,14 +21,14 @@ const userSchema = new mongoose.Schema({
     },
     // Link to the Restaurant model
     restaurant: {
-        type: mongoose.Schema.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Restaurant',
         default: null
     },
     role: {
         type: String,
         enum: ['admin', 'staff', 'kitchen', 'user'],
-        default: 'user' // Default role is staff
+        default: 'user' // Default role is user
     },
     // For staff requesting to join
     joinRequestStatus: {
