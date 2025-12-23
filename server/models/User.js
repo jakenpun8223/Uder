@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import bcrypt from 'bcrypt';
+import Restaurant from "./Restaurant";
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -18,16 +20,29 @@ const userSchema = new mongoose.Schema({
         required: true,
         // Note: No length/complexity validation here because this stores the HASH, not the plain text.
     },
+    // Link to the Restaurant model
+    restaurant: {
+        type: mongoose.Schema.ObjectId,
+        ref: 'Restaurant',
+        default: null
+    },
     role: {
         type: String,
-        enum: ['admin', 'staff', 'kitchen'],
-        default: 'staff' // Default role is staff
-    }
+        enum: ['admin', 'staff', 'kitchen', 'user'],
+        default: 'user' // Default role is staff
+    },
+    // For staff requesting to join
+    joinRequestStatus: {
+        type: String,
+        enum: ['none', 'pending', 'approved', 'rejected'],
+        default: 'none'
+    },
 }, {
     timestamps: true,
     toJSON: {
         transform(doc, ret) {
             delete ret.password; // Never send password hash to frontend
+            delete ret.__v;      // Remove version key
             return ret;
         }
     },
@@ -37,6 +52,14 @@ const userSchema = new mongoose.Schema({
         return ret;
       },
     }
+});
+
+// Encrypted password before saving
+userSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) return next();
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
 });
 
 export default mongoose.model('User', userSchema);
