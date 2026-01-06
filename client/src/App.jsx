@@ -5,9 +5,11 @@ import { io } from 'socket.io-client';
 import { useEffect } from 'react';
 
 // Components & Pages
+import { CartProvider } from './context/CartContext';
 import Navbar from './components/Navbar';
 import Login from './pages/Login'; 
 import Register from './pages/Register';
+import Menu from './pages/Menu';
 
 // Initialize Socket
 const socket = io('http://localhost:5000');
@@ -21,7 +23,7 @@ const ProtectedRoute = () => {
 
 // Placeholders
 const KitchenDashboard = () => <h1 className="text-2xl p-4">Kitchen Dashboard (Private)</h1>;
-const Menu = () => <h1 className="text-2xl p-4">Menu Page (Public)</h1>;
+const Menu = () => <Menu />;
 
 function App() {
   useEffect(() => {
@@ -50,6 +52,7 @@ function App() {
             {/* Catch all */}
             <Route path="*" element={<Navigate to="/menu" />} />
           </Routes>
+          <CartProvider />
         </div>
       </AuthProvider>
     </BrowserRouter>
