@@ -4,10 +4,38 @@ import ProductCard from '../components/ProductCard';
 import FloatingCart from '../components/FloatingCart';
 import CallWaiter from '../components/CallWaiter';
 import useAuth from '../hooks/useAuth';
+import { useSearchParams } from 'react-router-dom';
 
 const CATEGORIES = ['All', 'Main', 'Sushi', 'Drinks', 'Dessert', 'Starters'];
 
 const Menu = () => {
+    const [searchParams] = useSearchParams();
+
+    // We need to know WHICH restaurant's menu to load
+    // If we are staff (logged in), we use our user data.
+    // If we are a guest, we MUST get it from the URL.
+
+    const { user } = useAuth();
+    const urlRestaurantId = searchParams.get('restaurant');
+
+    // Logic: Use Logged-in Restaurant ID OR URL Restaurant ID
+    const targetRestaurantId = user?.restaurant || urlRestaurantId;
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            if (!targetRestaurantId) return; // Wait until we know the ID
+
+            try {
+                // Pass restaurantId to the backend
+                const { data } = await axios.get(`/products?restaurantId=${targetRestaurantId}`);
+                setProducts(data);
+            } catch (err) {
+               // ...
+            }
+        };
+        fetchProducts();
+    }, [targetRestaurantId]);
+
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -38,7 +66,6 @@ const Menu = () => {
     if (loading) return <div className="text-center p-10">Loading tasty food...</div>;
     if (error) return <div className="text-center text-red-500 p-10">{error}</div>;
 
-    const { user } = useAuth();
     const isStaff = user && (user.role === 'staff' || user.role === 'admin');
 
     return (

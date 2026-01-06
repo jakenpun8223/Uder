@@ -14,6 +14,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Menu from './pages/Menu';
 import Checkout from './pages/Checkout';
+import StaffManagement from './pages/StaffManagement';
 import { socket } from './socket';
 
 // Security Guard
@@ -65,6 +66,7 @@ function App() {
                     <Route path='/checkout' element={<Checkout />} />
                     <Route path="/kitchen" element={<KitchenDashboard />} />
                     <Route path="/admin" element={<h1>Admin Panel</h1>} />
+                    <Route path="/staff" element={<StaffManagement />} />
                 </Route>
 
                 {/* Catch all */}
