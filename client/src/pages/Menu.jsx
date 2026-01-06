@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import axios from '../api/axios';
 import ProductCard from '../components/ProductCard';
 import FloatingCart from '../components/FloatingCart';
+import CallWaiter from '../components/CallWaiter';
+import useAuth from '../hooks/useAuth';
 
 const CATEGORIES = ['All', 'Main', 'Sushi', 'Drinks', 'Dessert', 'Starters'];
 
@@ -36,6 +38,9 @@ const Menu = () => {
     if (loading) return <div className="text-center p-10">Loading tasty food...</div>;
     if (error) return <div className="text-center text-red-500 p-10">{error}</div>;
 
+    const { user } = useAuth();
+    const isStaff = user && (user.role === 'staff' || user.role === 'admin');
+
     return (
         <div className="max-w-7xl mx-auto pb-20"> {/* pb-20 for floating cart space later */}
             
@@ -68,7 +73,12 @@ const Menu = () => {
                     No items found in {selectedCategory}.
                 </div>
             )}
-            <FloatingCart />
+            
+            {isStaff ? (
+                <FloatingCart />
+            ) : (
+                <CallWaiter />
+            )}
         </div>
     );
 };
