@@ -6,7 +6,7 @@ import Restaurant from "../models/Restaurant.js";
 
 // Generate JWT and save to Cookie
 const sendTokenResponse = (user, statusCode, res) => {
-  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+  const token = jwt.sign({ id: user._id, role: user.role, restaurant: user.restaurant }, process.env.JWT_SECRET, {
     expiresIn: '7d'
   });
 
@@ -26,6 +26,7 @@ const sendTokenResponse = (user, statusCode, res) => {
         name: user.name,
         email: user.email,
         role: user.role
+        restaurant: user.restaurant
       }
     });
 };
