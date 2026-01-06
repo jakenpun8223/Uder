@@ -5,6 +5,8 @@ const ProductCard = ({ product }) => {
     const { addToCart, removeFromCart, cart } = useCart();
     const { user } = useAuth();
     
+    const isStaff = user && (user.role === 'staff' || user.role === 'admin');
+
     // Check quantity
     const cartItem = cart.find(item => item._id === product._id);
     const quantity = cartItem ? cartItem.quantity : 0;
@@ -40,7 +42,7 @@ const ProductCard = ({ product }) => {
 
             {/* Controls - ONLY VISIBLE TO LOGGED IN STAFF */}
             <div className="mt-auto pt-4 border-t border-gray-100">
-                {user ? (
+                {isStaff ? (
                     <>
                         {quantity === 0 ? (
                             <button 
@@ -72,7 +74,7 @@ const ProductCard = ({ product }) => {
                     </>
                 ) : (
                     <div className="text-center text-xs text-gray-400 italic">
-                        Login to place order
+                        Ask a waiter to order
                     </div>
                 )}
             </div>
