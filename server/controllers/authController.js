@@ -33,8 +33,10 @@ export const register = async (req, res) => {
   try {
     // 1. Validate Input (Zod)
     const result = registerSchema.safeParse(req.body);
-    if(!result.success){
-      return res.status(400).json({ error: result.error.errors[0].message });
+    if (!result.success) {
+      // Safely try to get the first error message, fallback to a generic one
+      const errorMessage = result.error.errors?.[0]?.message || "Invalid registration data";
+      return res.status(400).json({ error: errorMessage });
     }
 
     const { name, email, password } = result.data;
