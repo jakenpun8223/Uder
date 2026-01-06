@@ -5,11 +5,14 @@ import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// [WAITER] Clear Notification (When waiter arrives)
+// [CUSTOMER] Call Waiter (Public)
+// Frontend must send: { restaurantId: "..." }
 router.post('/:tableNumber/resolve-assistance', protect, async (req, res) => {
     try {
         const { tableNumber } = req.params;
-        const table = await Table.findOne({ tableNumber });
+        const { restaurantId } = req.body;
+
+        const table = await Table.findOne({ tableNumber, restaurant: restaurantId });
         
         if (!table) return res.status(404).json({ message: "Table not found" });
 
@@ -18,7 +21,11 @@ router.post('/:tableNumber/resolve-assistance', protect, async (req, res) => {
 
         // Optional: Tell other waiters it's handled
         const io = req.app.get('socketio');
-        io.emit('table_resolved', { tableNumber });
+        io.emit('table_calling', { 
+            tableNumber, 
+            restaurantId, 
+            message: `Table ${tableNumber} needs help!` 
+        });
 
         res.json({ message: "Assistance request cleared" });
     } catch (error) {
@@ -73,7 +80,7 @@ router.get('/:tableNumber', protect, async (req, res) => {
 // Get all tables (For Waiters Dashboard to see what`s free)
 router.get('/', protect, async (req,res) => {
     try{
-        const tables = await Table.find().sort({ tableNumber: 1 });
+        const tables = await Table.find({ restaurant: req.user.restaurant }).sort({ tableNumber: 1 });
         res.json(tables);
     }
     catch(error){
@@ -85,10 +92,20 @@ router.get('/', protect, async (req,res) => {
 router.post('/', protect, authorize('admin'), async (req,res) => {
     try{
         const { tableNumber, capacity } = req.body;
-        const existingTable = await Table.findOne({ tableNumber });
+
+        const existingTable = await Table.findOne({ 
+            tableNumber, 
+            restaurant: req.user.restaurant 
+        });
+
         if(existingTable) return res.status(400).json({ message: "Table already exists" });
 
-        const newTable = new Table.create({ tableNumber, capacity });
+        const newTable = await Table.create({ 
+            tableNumber, 
+            capacity,
+            restaurant: req.user.restaurant 
+        });
+
         res.status(201).json(newTable);
     }
     catch(error){
@@ -99,7 +116,11 @@ router.post('/', protect, authorize('admin'), async (req,res) => {
 // Clear/Free a Table (When customer leave)
 router.patch('/:id/free', protect, authorize('admin', 'staff'), async (req,res) => {
     try{
-        const table = await Table.findById(req.params.id);
+        const table = await Table.findOne({ 
+            _id: req.params.id, 
+            restaurant: req.user.restaurant 
+        });
+        
         if(!table) return res.status(404).json({ message: "Table not found" });
 
         table.status = 'available';

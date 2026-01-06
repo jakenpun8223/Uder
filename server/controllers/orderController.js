@@ -9,9 +9,13 @@ export const createOrder = async (req,res) => {
         // items expected format: [{ product: "productId", quantity: 2 }]
 
         // VALIDATION: Does this table exist?
-        const table = await Table.findOne({ tableNumber });
+        const table = await Table.findOne({ 
+            tableNumber, 
+            restaurant: req.user.restaurant 
+        });
+
         if(!table){
-            return res.status(404).json({ message: `Table ${tableNumber} does not exist in system.` });
+            return res.status(404).json({ message: `Table ${tableNumber} does not exist in resturant.` });
         }
 
         // VALIDATION: Is it already occupied?
@@ -24,7 +28,11 @@ export const createOrder = async (req,res) => {
 
         //Fetch real prices from DB to be scure
         for (const item of items){
-            const productDoc = await Product.findById(item.product);
+            const productDoc = await Product.findOne({ 
+                _id: item.product, 
+                restaurant: req.user.restaurant 
+            });
+
             if(productDoc){
                 finalItems.push({
                     product: productDoc._id,
@@ -39,7 +47,8 @@ export const createOrder = async (req,res) => {
         const newOrder = new Order({
             tableNumber,
             items: finalItems,
-            totalAmount
+            totalAmount,
+            restaurant: req.user.restaurant
         });
         await newOrder.save();
 
@@ -61,12 +70,12 @@ export const addItemsToOrder = async (req,res) => {
         const { id } = req.params; // Order ID
         const { items } = req.body; // New items to add
 
-        const order = await Order.findById(id);
+        const order = await Order.findOne({ _id: id, restaurant: req.user.restaurant });
         if(!order) return res.status(404).json({ message: "Order not found" });
 
         // Calculate and push new items
         for (const item of items){
-            const productDoc = await Product.findById(item.product);
+            const productDoc = await Product.findOne({ _id: item.product, restaurant: req.user.restaurant });
             if(productDoc){
                 order.items.push({
                     product: productDoc._id,
@@ -93,7 +102,7 @@ export const getAllOrders = async (req,res) => {
     try{
         // Return all orders sorted by newest first
         // Populate 'product' to get details like allergies/category
-        const orders = await Order.find()
+        const orders = await Order.find({ restaurant: req.user.restaurant })
             .sort({ createdAt: -1 })
             .populate('items.product');
         res.json(orders);
@@ -107,8 +116,8 @@ export const getAllOrders = async (req,res) => {
 export const updateOrderStatus = async (req,res) => {
     try{
         const { status } = req.body;
-        const order = await Order.findByIdAndUpdate(
-            req.params.id,
+        const order = await Order.findOneAndUpdate(
+            { _id: req.params.id, restaurant: req.user.restaurant },
             { status },
             { new: true }
         );

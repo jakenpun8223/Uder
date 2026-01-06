@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 export const getAllUsers = async (req, res) => {
   try {
     // Fetch all users and exclude passwords
-    const users = await user.find().select("-password");
+    const users = await user.find({ restaurant: req.user.restaurant }).select("-password");
 
     return res.status(200).json({
       count: users.length,
