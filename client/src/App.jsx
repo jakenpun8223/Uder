@@ -43,10 +43,10 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/menu" element={<Menu />} />
-              <Route path='/checkout' element={<Checkout />} />
 
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
+                  <Route path='/checkout' element={<Checkout />} />
                   <Route path="/kitchen" element={<KitchenDashboard />} />
                   <Route path="/admin" element={<h1>Admin Panel</h1>} />
               </Route>
