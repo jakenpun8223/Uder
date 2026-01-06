@@ -12,31 +12,27 @@ import TableSelector from './components/TableSelector';
 import Navbar from './components/Navbar';
 import Login from './pages/Login'; 
 import Register from './pages/Register';
+import KitchenDashboard from './pages/KitchenDashboard';
+import MenuManager from './pages/MenuManager'; // IMPORTED
 import Menu from './pages/Menu';
 import Checkout from './pages/Checkout';
 import StaffManagement from './pages/StaffManagement';
 import { socket } from './socket';
 
 // Security Guard
-const ProtectedRoute = () => {
+const ProtectedRoute = ({ allowedRoles }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="p-4">Loading...</div>;
-  return user ? <Outlet /> : <Navigate to="/login" />;
+  
+  if (!user) return <Navigate to="/login" />;
+  
+  // Role Check
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+     return <Navigate to="/menu" />; // Redirect unauthorized users to menu
+  }
+  
+  return <Outlet />;
 };
-
-// Placeholders
-const KitchenDashboard = () => (
-    <div>
-        <h1 className="text-2xl font-bold mb-4">Staff Dashboard</h1>
-        
-        {/* The Waiter configures their tables here */}
-        <TableSelector />
-        
-        <div className="bg-gray-100 p-8 rounded text-center">
-            <h2 className="text-xl">Active Orders (Coming Soon...)</h2>
-        </div>
-    </div>
-);
 
 function App() {
   useEffect(() => {
@@ -47,7 +43,6 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        {/* Navbar is here so it appears on ALL pages */}
         <CartProvider>
           <WaiterProvider>
             <Navbar />
@@ -61,11 +56,11 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/menu" element={<Menu />} />
 
-                {/* Protected Routes */}
-                <Route element={<ProtectedRoute />}>
+            {/* Kitchen & Admin Routes - protected routes */}
+                <Route element={<ProtectedRoute allowedRoles={['kitchen', 'admin']} />}>
                     <Route path='/checkout' element={<Checkout />} />
-                    <Route path="/kitchen" element={<KitchenDashboard />} />
-                    <Route path="/admin" element={<h1>Admin Panel</h1>} />
+                    <Route path="/kitchen" element={<KitchenDashboard socket={socket} />} />
+                    <Route path="/manage-menu" element={<MenuManager />} />
                     <Route path="/staff" element={<StaffManagement />} />
                 </Route>
 

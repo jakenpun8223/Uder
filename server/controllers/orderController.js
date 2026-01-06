@@ -113,17 +113,24 @@ export const getAllOrders = async (req,res) => {
 };
 
 // [CHEF / CASHIER] Update status (Pending -> Preparing -> Served -> Paid)
-export const updateOrderStatus = async (req,res) => {
-    try{
+export const updateOrderStatus = async (req, res) => {
+    try {
         const { status } = req.body;
         const order = await Order.findOneAndUpdate(
             { _id: req.params.id, restaurant: req.user.restaurant },
             { status },
             { new: true }
-        );
+        ).populate('items.product'); // Populate so the frontend gets full product details back
+
+        if (!order) return res.status(404).json({ message: "Order not found" });
+
+        // --- NEW: EMIT UPDATE ---
+        const io = req.app.get('socketio'); 
+        io.emit('order_updated', order);
+        // ------------------------
+
         res.json(order);
-    }
-    catch(error){
+    } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
