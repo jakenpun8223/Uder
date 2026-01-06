@@ -27,9 +27,14 @@ export const AuthProvider = ({ children }) => {
     };
 
     // --- NEW: Register Function ---
-    const register = async (name, email, password) => {
-        const { data } = await axios.post('/auth/register', { name, email, password });
-        // Assuming backend logs user in immediately after register (sets cookie)
+    const register = async (name, email, password, restaurantName) => {
+        // Pass restaurantName to the backend
+        const { data } = await axios.post('/auth/register', { 
+            name, 
+            email, 
+            password, 
+            restaurantName 
+        });
         setUser(data.user || data);
     };
 
