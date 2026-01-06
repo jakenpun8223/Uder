@@ -25,6 +25,11 @@ export const createStaffUser = async (req, res) => {
         // AND ensuring we use the requester's restaurant ID
         const managerRestaurantId = req.user.restaurant; // From Auth Middleware
 
+        // SAFETY CHECK: If token didn't have restaurant, stop here.
+        if (!managerRestaurantId) {
+          return res.status(400).json({ message: "Critical Error: You are not linked to a restaurant." });
+      }
+
         // Check if user exists
         const existing = await User.findOne({ email });
         if(existing) return res.status(400).json({ message: "Email already in use" });
