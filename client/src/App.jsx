@@ -10,6 +10,7 @@ import Navbar from './components/Navbar';
 import Login from './pages/Login'; 
 import Register from './pages/Register';
 import Menu from './pages/Menu';
+import Checkout from './pages/Checkout';
 
 // Initialize Socket
 const socket = io('http://localhost:5000');
@@ -42,6 +43,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/menu" element={<Menu />} />
+              <Route path='/checkout' element={<Checkout />} />
 
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
