@@ -23,7 +23,6 @@ const ProtectedRoute = () => {
 
 // Placeholders
 const KitchenDashboard = () => <h1 className="text-2xl p-4">Kitchen Dashboard (Private)</h1>;
-const Menu = () => <Menu />;
 
 function App() {
   useEffect(() => {
