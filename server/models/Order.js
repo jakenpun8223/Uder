@@ -35,6 +35,12 @@ const orderSchema = new mongoose.Schema({
         type: String,
         enum: ['pending', 'preparing', 'ready', 'served', 'paid', 'cancelled'],
         default: 'pending'
+    },
+    restaurant: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Restaurant',
+        required: true,
+        index: true // Important for performance!
     }
 }, { timestamps: true });
 

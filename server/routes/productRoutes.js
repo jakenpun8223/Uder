@@ -7,7 +7,8 @@ const router = express.Router();
 // --- PUBLIC ROUTES (Everyone can see the menu) ---
 router.get('/', async (req, res) => {
     try {
-        const menu = await Product.find({ isAvailable: true });
+        const { restaurantId } = req.query;
+        const menu = await Product.find({ restaurant: restaurantId, isAvailable: true });
         res.json(menu);
     } catch(error) {
         res.status(500).json({ message: error.message });
@@ -18,7 +19,8 @@ router.get('/', async (req, res) => {
 
 // 1. GET Full list (Kitchen needs to see even unavailable items)
 router.get('/all', protect, authorize('admin', 'kitchen'), async (req,res) => {
-    const allProducts = await Product.find({});
+    const { restaurantId } = req.query;
+    const allProducts = await Product.find({ restaurant: restaurantId });
     res.json(allProducts);
 });
 

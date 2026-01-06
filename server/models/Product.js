@@ -32,7 +32,13 @@ const productSchema = new mongoose.Schema({
         type: String,
         trim: true,
         required: true 
-    }]
+    }],
+    restaurant: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Restaurant',
+        required: true,
+        index: true // Important for performance!
+    }
 }, { timestamps: true });
 
 export default mongoose.model('Product', productSchema);

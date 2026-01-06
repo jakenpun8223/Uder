@@ -22,6 +22,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['admin', 'staff', 'kitchen'],
         default: 'staff' // Default role is staff
+    },
+    restaurant: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Restaurant',
+        required: true // Every user MUST belong to a restaurant
     }
 }, {
     timestamps: true,

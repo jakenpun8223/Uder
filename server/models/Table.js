@@ -23,6 +23,12 @@ const tableSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Order',
         default: null
+    },
+    restaurant: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Restaurant',
+        required: true,
+        index: true // Important for performance!
     }
 }, { timestamps: true });
 
