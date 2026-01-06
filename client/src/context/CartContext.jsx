@@ -39,13 +39,15 @@ export const CartProvider = ({ children }) => {
         });
     };
 
+    const clearCart = () => setCart([]);
+
     // Calculate total price automatically
     const cartTotal = useMemo(() => {
         return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
     }, [cart]);
 
     return (
-        <CartContext.Provider value={{ cart, addToCart, removeFromCart, cartTotal }}>
+        <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, cartTotal }}>
             {children}
         </CartContext.Provider>
     );
