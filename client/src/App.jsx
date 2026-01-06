@@ -9,19 +9,26 @@ import Navbar from './components/Navbar';
 import Login from './pages/Login'; 
 import Register from './pages/Register';
 import KitchenDashboard from './pages/KitchenDashboard';
+import MenuManager from './pages/MenuManager'; // IMPORTED
+import Menu from './pages/Menu'; // IMPORTED
 
 // Initialize Socket
 const socket = io('http://localhost:5000');
 
 // Security Guard
-const ProtectedRoute = () => {
+const ProtectedRoute = ({ allowedRoles }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="p-4">Loading...</div>;
-  return user ? <Outlet /> : <Navigate to="/login" />;
+  
+  if (!user) return <Navigate to="/login" />;
+  
+  // Role Check
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+     return <Navigate to="/menu" />; // Redirect unauthorized users to menu
+  }
+  
+  return <Outlet />;
 };
-
-// Placeholders
-const Menu = () => <h1 className="text-2xl p-4">Menu Page (Public)</h1>;
 
 function App() {
   useEffect(() => {
@@ -31,7 +38,6 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        {/* Navbar is here so it appears on ALL pages */}
         <Navbar />
         
         <div className="container mx-auto p-4">
@@ -39,13 +45,12 @@ function App() {
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/menu" element={<Menu />} />
-            <Route path="/kitchen" element={<KitchenDashboard socket={socket} />} />
+            <Route path="/menu" element={<Menu />} /> {/* REPLACED */}
 
-            {/* Protected Routes */}
-            <Route element={<ProtectedRoute />}>
-                
-                <Route path="/admin" element={<h1>Admin Panel</h1>} />
+            {/* Kitchen & Admin Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['kitchen', 'admin']} />}>
+                <Route path="/kitchen" element={<KitchenDashboard socket={socket} />} />
+                <Route path="/manage-menu" element={<MenuManager />} /> {/* NEW */}
             </Route>
 
             {/* Catch all */}
