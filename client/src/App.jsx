@@ -6,14 +6,14 @@ import { useEffect } from 'react';
 
 // Components & Pages
 import { CartProvider } from './context/CartContext';
+import { WaiterProvider } from './context/WaiterContext';
+import WaiterNotifications from './components/WaiterNotifications';
 import Navbar from './components/Navbar';
 import Login from './pages/Login'; 
 import Register from './pages/Register';
 import Menu from './pages/Menu';
 import Checkout from './pages/Checkout';
-
-// Initialize Socket
-const socket = io('http://localhost:5000');
+import { socket } from './socket';
 
 // Security Guard
 const ProtectedRoute = () => {
@@ -27,7 +27,8 @@ const KitchenDashboard = () => <h1 className="text-2xl p-4">Kitchen Dashboard (P
 
 function App() {
   useEffect(() => {
-    socket.on('connect', () => console.log('Connected to Server:', socket.id));
+    socket.on('connect', () => console.log('Connected:', socket.id));
+    return () => socket.off('connect');
   }, []);
 
   return (
@@ -35,26 +36,30 @@ function App() {
       <AuthProvider>
         {/* Navbar is here so it appears on ALL pages */}
         <CartProvider>
-          <Navbar />
-          
-          <div className="container mx-auto p-4">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/menu" element={<Menu />} />
+          <WaiterProvider>
+            <Navbar />
 
-              {/* Protected Routes */}
-              <Route element={<ProtectedRoute />}>
-                  <Route path='/checkout' element={<Checkout />} />
-                  <Route path="/kitchen" element={<KitchenDashboard />} />
-                  <Route path="/admin" element={<h1>Admin Panel</h1>} />
-              </Route>
+            <WaiterNotifications />
+            
+            <div className="container mx-auto p-4">
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/menu" element={<Menu />} />
 
-              {/* Catch all */}
-              <Route path="*" element={<Navigate to="/menu" />} />
-            </Routes>
-          </div>
+                {/* Protected Routes */}
+                <Route element={<ProtectedRoute />}>
+                    <Route path='/checkout' element={<Checkout />} />
+                    <Route path="/kitchen" element={<KitchenDashboard />} />
+                    <Route path="/admin" element={<h1>Admin Panel</h1>} />
+                </Route>
+
+                {/* Catch all */}
+                <Route path="*" element={<Navigate to="/menu" />} />
+              </Routes>
+            </div>
+          </WaiterProvider>
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>
