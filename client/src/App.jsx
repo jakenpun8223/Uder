@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Login from './pages/Login'; 
 import Register from './pages/Register';
+import KitchenDashboard from './pages/KitchenDashboard';
 
 // Initialize Socket
 const socket = io('http://localhost:5000');
@@ -20,7 +21,6 @@ const ProtectedRoute = () => {
 };
 
 // Placeholders
-const KitchenDashboard = () => <h1 className="text-2xl p-4">Kitchen Dashboard (Private)</h1>;
 const Menu = () => <h1 className="text-2xl p-4">Menu Page (Public)</h1>;
 
 function App() {
