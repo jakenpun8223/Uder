@@ -33,26 +33,27 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         {/* Navbar is here so it appears on ALL pages */}
-        <Navbar />
-        
-        <div className="container mx-auto p-4">
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/menu" element={<Menu />} />
+        <CartProvider>
+          <Navbar />
+          
+          <div className="container mx-auto p-4">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/menu" element={<Menu />} />
 
-            {/* Protected Routes */}
-            <Route element={<ProtectedRoute />}>
-                <Route path="/kitchen" element={<KitchenDashboard />} />
-                <Route path="/admin" element={<h1>Admin Panel</h1>} />
-            </Route>
+              {/* Protected Routes */}
+              <Route element={<ProtectedRoute />}>
+                  <Route path="/kitchen" element={<KitchenDashboard />} />
+                  <Route path="/admin" element={<h1>Admin Panel</h1>} />
+              </Route>
 
-            {/* Catch all */}
-            <Route path="*" element={<Navigate to="/menu" />} />
-          </Routes>
-          <CartProvider />
-        </div>
+              {/* Catch all */}
+              <Route path="*" element={<Navigate to="/menu" />} />
+            </Routes>
+          </div>
+        </CartProvider>
       </AuthProvider>
     </BrowserRouter>
   );
