@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 import { CartProvider } from './context/CartContext';
 import { WaiterProvider } from './context/WaiterContext';
 import WaiterNotifications from './components/WaiterNotifications';
+import TableSelector from './components/TableSelector';
 import Navbar from './components/Navbar';
 import Login from './pages/Login'; 
 import Register from './pages/Register';
@@ -23,7 +24,18 @@ const ProtectedRoute = () => {
 };
 
 // Placeholders
-const KitchenDashboard = () => <h1 className="text-2xl p-4">Kitchen Dashboard (Private)</h1>;
+const KitchenDashboard = () => (
+    <div>
+        <h1 className="text-2xl font-bold mb-4">Staff Dashboard</h1>
+        
+        {/* The Waiter configures their tables here */}
+        <TableSelector />
+        
+        <div className="bg-gray-100 p-8 rounded text-center">
+            <h2 className="text-xl">Active Orders (Coming Soon...)</h2>
+        </div>
+    </div>
+);
 
 function App() {
   useEffect(() => {
