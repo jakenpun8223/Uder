@@ -46,13 +46,12 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/menu" element={<Menu />} />
-            <Route path="/manage-menu" element={<MenuManager />} /> {/* NEW */} 
             {/* REPLACED */}
 
             {/* Kitchen & Admin Routes */}
             <Route element={<ProtectedRoute allowedRoles={['kitchen', 'admin']} />}>
                 <Route path="/kitchen" element={<KitchenDashboard socket={socket} />} />
-                
+                <Route path="/manage-menu" element={<MenuManager />} /> {/* NEW */} 
             </Route>
 
             {/* Catch all */}
