@@ -18,53 +18,36 @@ export const getAllUsers = async (req, res) => {
 
 // POST /api/users/staff
 export const createStaffUser = async (req, res) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
+    try {
+        const { name, email, password, role } = req.body;
+        
+        // Security Check: Only Admins can do this (handled by middleware usually)
+        // AND ensuring we use the requester's restaurant ID
+        const managerRestaurantId = req.user.restaurant; // From Auth Middleware
+
+        // SAFETY CHECK: If token didn't have restaurant, stop here.
+        if (!managerRestaurantId) {
+          return res.status(400).json({ message: "Critical Error: You are not linked to a restaurant." });
+      }
+
+        // Check if user exists
+        const existing = await User.findOne({ email });
+        if(existing) return res.status(400).json({ message: "Email already in use" });
+
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+
+        const newStaff = await User.create({
+            name,
+            email,
+            password: hash,
+            role: role || 'staff', // 'staff' or 'kitchen'
+            restaurant: managerRestaurantId // <--- AUTO-ASSIGNED
+        });
+
+        res.status(201).json({ message: "Staff created successfully", user: { id: newStaff._id, name: newStaff.name } });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
-
-    if (req.user.role !== "manager" && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-
-    const managerRestaurantId = req.user.restaurant;
-
-    if (!managerRestaurantId) {
-      return res.status(400).json({
-        message: "Critical Error: You are not linked to a restaurant."
-      });
-    }
-
-    const { name, email, password, role } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    const normalizedEmail = email.toLowerCase();
-
-    const existing = await User.findOne({ email: normalizedEmail });
-    if (existing) {
-      return res.status(400).json({ message: "Email already in use" });
-    }
-
-    const hash = await bcrypt.hash(password, 10);
-
-    const newStaff = await User.create({
-      name,
-      email: normalizedEmail,
-      password: hash,
-      role: role || "staff",
-      restaurant: managerRestaurantId
-    });
-
-    res.status(201).json({
-      message: "Staff created successfully",
-      user: { id: newStaff._id, name: newStaff.name }
-    });
-
-  } catch (error) {
-    console.error("Create staff error:", error);
-    res.status(500).json({ message: "Server error" });
-  }
 };
