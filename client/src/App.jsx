@@ -40,10 +40,11 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/menu" element={<Menu />} />
+            <Route path="/kitchen" element={<KitchenDashboard socket={socket} />} />
 
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
-                <Route path="/kitchen" element={<KitchenDashboard socket={socket} />} />
+                
                 <Route path="/admin" element={<h1>Admin Panel</h1>} />
             </Route>
 

@@ -11,7 +11,6 @@ const KitchenDashboard = ({ socket }) => {
         const fetchOrders = async () => {
             try {
                 const { data } = await axios.get('/orders');
-                // Keep only active kitchen orders
                 const activeOrders = data.filter(o => ['pending', 'preparing', 'ready'].includes(o.status));
                 setOrders(activeOrders);
             } catch (err) {
@@ -22,7 +21,6 @@ const KitchenDashboard = ({ socket }) => {
         };
         fetchOrders();
 
-        // Update timer every minute for the "15 min" warning
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
@@ -31,12 +29,10 @@ const KitchenDashboard = ({ socket }) => {
     useEffect(() => {
         if (!socket) return;
 
-        // A. New Order Received
         socket.on('receive_order', (newOrder) => {
             setOrders((prev) => [newOrder, ...prev]);
         });
 
-        // B. Order Updated (By another chef or waiter)
         socket.on('order_updated', (updatedOrder) => {
             setOrders((prev) => 
                 prev.map((order) => 
@@ -53,7 +49,6 @@ const KitchenDashboard = ({ socket }) => {
 
     // 3. Handle Status Click
     const handleStatusUpdate = async (orderId, newStatus) => {
-        // Optimistic Update (Instant UI change)
         setOrders(prev => prev.map(order => 
             order._id === orderId ? { ...order, status: newStatus } : order
         ));
@@ -62,7 +57,6 @@ const KitchenDashboard = ({ socket }) => {
             await axios.patch(`/orders/${orderId}/status`, { status: newStatus });
         } catch (err) {
             console.error("Status update failed:", err);
-            // In a real app, you might revert the state here on error
         }
     };
 
@@ -70,9 +64,12 @@ const KitchenDashboard = ({ socket }) => {
         return Math.floor((currentTime - new Date(createdAt)) / 60000);
     };
 
-    if (loading) return <div className="p-10 text-center text-xl animate-pulse">Loading Kitchen Feed...</div>;
+    if (loading) return (
+        <div className="flex h-screen items-center justify-center bg-gray-100 text-gray-500 font-bold uppercase tracking-widest">
+            Loading System...
+        </div>
+    );
 
-    // Filter into columns
     const columns = {
         pending: orders.filter(o => o.status === 'pending'),
         preparing: orders.filter(o => o.status === 'preparing'),
@@ -80,41 +77,64 @@ const KitchenDashboard = ({ socket }) => {
     };
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                <span>👨‍🍳</span> Kitchen Display System
-            </h1>
+        <div className="min-h-screen bg-gray-100 p-4 font-sans text-gray-800">
+            {/* Header */}
+            <header className="mb-6 flex items-center justify-between border-b-2 border-gray-200 pb-4">
+                <div>
+                    <h1 className="text-2xl font-black uppercase tracking-tight text-gray-900">
+                        Kitchen<span className="text-primary">Display</span>
+                    </h1>
+                    <p className="text-sm font-medium text-gray-500">Live Service Monitor</p>
+                </div>
+                <div className="text-right">
+                    <div className="text-3xl font-bold text-gray-800">
+                        {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div className="text-xs font-bold uppercase tracking-wide text-gray-400">
+                        Active Orders: {orders.length}
+                    </div>
+                </div>
+            </header>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Grid */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 h-[calc(100vh-140px)]">
+                {/* Column 1: PENDING */}
                 <StatusColumn 
-                    title="New Orders" 
+                    title="Inbound Orders" 
                     orders={columns.pending} 
-                    color="bg-red-50 border-red-200" 
-                    badgeColor="bg-red-100 text-red-800"
-                    btnColor="bg-red-600 hover:bg-red-700"
-                    actionLabel="Start Cooking"
+                    borderColor="border-gray-400"
+                    headerBg="bg-gray-800"
+                    headerText="text-white"
+                    btnClass="bg-gray-800 hover:bg-gray-900 text-white"
+                    actionLabel="Start Prep"
                     nextStatus="preparing"
                     onAction={handleStatusUpdate}
                     getMinutesWaiting={getMinutesWaiting}
                 />
+
+                {/* Column 2: PREPARING (Brand Primary) */}
                 <StatusColumn 
-                    title="Cooking" 
+                    title="Preparing" 
                     orders={columns.preparing} 
-                    color="bg-orange-50 border-orange-200" 
-                    badgeColor="bg-orange-100 text-orange-800"
-                    btnColor="bg-orange-500 hover:bg-orange-600"
+                    borderColor="border-primary"
+                    headerBg="bg-primary"
+                    headerText="text-white"
+                    btnClass="bg-primary hover:opacity-90 text-white"
                     actionLabel="Mark Ready"
                     nextStatus="ready"
                     onAction={handleStatusUpdate}
                     getMinutesWaiting={getMinutesWaiting}
                 />
+
+                {/* Column 3: READY (Brand Secondary) */}
                 <StatusColumn 
-                    title="Ready to Serve" 
+                    title="Ready for Pickup" 
                     orders={columns.ready} 
-                    color="bg-green-50 border-green-200" 
-                    badgeColor="bg-green-100 text-green-800"
-                    btnColor="bg-green-600 hover:bg-green-700"
-                    actionLabel="Complete"
+                    borderColor="border-secondary"
+                    headerBg="bg-secondary"
+                    headerText="text-white"
+                    btnClass="bg-secondary hover:opacity-90 text-white"
+                    actionLabel="Order Served"
                     nextStatus="served"
                     onAction={handleStatusUpdate}
                     getMinutesWaiting={getMinutesWaiting}
@@ -124,54 +144,74 @@ const KitchenDashboard = ({ socket }) => {
     );
 };
 
-// Reusable Card Component
-const StatusColumn = ({ title, orders, color, badgeColor, btnColor, actionLabel, nextStatus, onAction, getMinutesWaiting }) => (
-    <div className={`rounded-xl border-2 p-4 ${color} min-h-[600px] flex flex-col`}>
-        <div className="flex justify-between items-center mb-4">
-            <h2 className={`text-lg font-bold px-3 py-1 rounded-full ${badgeColor}`}>
-                {title}
-            </h2>
-            <span className="text-gray-500 font-medium">{orders.length}</span>
+// Reusable Professional Card
+const StatusColumn = ({ title, orders, borderColor, headerBg, headerText, btnClass, actionLabel, nextStatus, onAction, getMinutesWaiting }) => (
+    <div className={`flex flex-col rounded-sm bg-gray-50 border-t-4 shadow-sm ${borderColor} h-full overflow-hidden`}>
+        {/* Column Header */}
+        <div className={`${headerBg} ${headerText} p-3 flex justify-between items-center shadow-md z-10`}>
+            <h2 className="text-sm font-bold uppercase tracking-wider">{title}</h2>
+            <span className="bg-white/20 px-2 py-0.5 rounded text-xs font-bold">{orders.length}</span>
         </div>
         
-        <div className="space-y-4 flex-1 overflow-y-auto">
+        {/* Scrollable List */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-3">
             {orders.map(order => {
                 const mins = getMinutesWaiting(order.createdAt);
                 const isLate = mins > 15;
 
                 return (
-                    <div key={order._id} className={`bg-white p-4 rounded-lg shadow-sm border-l-4 transition-all ${isLate ? 'border-red-500 animate-pulse' : 'border-gray-300'}`}>
-                        <div className="flex justify-between items-start mb-3">
+                    <div key={order._id} className="bg-white border border-gray-200 rounded-sm shadow-sm flex flex-col relative overflow-hidden group">
+                        {/* Late Indicator Strip */}
+                        {isLate && <div className="absolute top-0 left-0 w-1 h-full bg-red-600 animate-pulse" />}
+
+                        {/* Card Header */}
+                        <div className="p-3 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
                             <div>
-                                <span className="text-xl font-bold text-gray-800">T-{order.tableNumber}</span>
-                                <div className="text-xs text-gray-400 mt-1">#{order._id.slice(-4)}</div>
+                                <span className="block text-lg font-black text-gray-800 leading-none">
+                                    TBL {order.tableNumber}
+                                </span>
+                                <span className="text-[10px] font-mono text-gray-400 uppercase">
+                                    ID: {order._id.slice(-6)}
+                                </span>
                             </div>
-                            <span className={`text-xs font-mono font-bold px-2 py-1 rounded ${isLate ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500'}`}>
-                                {mins}m
-                            </span>
+                            <div className={`text-right ${isLate ? 'text-red-600' : 'text-gray-500'}`}>
+                                <span className={`block text-xl font-bold leading-none ${isLate ? 'animate-pulse' : ''}`}>
+                                    {mins}<span className="text-xs align-top">m</span>
+                                </span>
+                            </div>
                         </div>
 
-                        <div className="border-t border-b border-gray-100 py-2 my-2 space-y-1">
+                        {/* Order Items */}
+                        <div className="p-3 space-y-2 flex-1">
                             {order.items.map((item, idx) => (
-                                <div key={idx} className="flex justify-between text-sm text-gray-700">
-                                    <span className="font-semibold">{item.quantity}x</span>
-                                    <span>{item.name || item.product?.name}</span>
+                                <div key={idx} className="flex justify-between items-center text-sm">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-gray-800 bg-gray-100 px-1.5 rounded text-xs border border-gray-300">
+                                            {item.quantity}
+                                        </span>
+                                        <span className="text-gray-700 font-medium">
+                                            {item.name || item.product?.name}
+                                        </span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
 
+                        {/* Action Button */}
                         <button 
                             onClick={() => onAction(order._id, nextStatus)}
-                            className={`w-full py-2 rounded-md font-bold text-white text-sm transition shadow-sm ${btnColor}`}
+                            className={`w-full py-3 text-xs font-bold uppercase tracking-widest transition-colors ${btnClass}`}
                         >
                             {actionLabel}
                         </button>
                     </div>
                 );
             })}
+            
             {orders.length === 0 && (
-                <div className="h-full flex items-center justify-center text-gray-400 opacity-50 italic">
-                    No orders
+                <div className="h-32 flex flex-col items-center justify-center text-gray-400 opacity-60">
+                    <span className="text-4xl mb-2">✓</span>
+                    <span className="text-xs uppercase font-bold tracking-wide">All Clear</span>
                 </div>
             )}
         </div>
