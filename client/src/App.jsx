@@ -43,7 +43,7 @@ function App() {
 
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
-                <Route path="/kitchen" element={<KitchenDashboard />} />
+                <Route path="/kitchen" element={<KitchenDashboard socket={socket} />} />
                 <Route path="/admin" element={<h1>Admin Panel</h1>} />
             </Route>
 
