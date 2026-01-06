@@ -19,15 +19,17 @@ router.get('/', async (req, res) => {
 
 // 1. GET Full list (Kitchen needs to see even unavailable items)
 router.get('/all', protect, authorize('admin', 'kitchen'), async (req,res) => {
-    const { restaurantId } = req.query;
-    const allProducts = await Product.find({ restaurant: restaurantId });
+    const allProducts = await Product.find({ restaurant: req.user.restaurant });
     res.json(allProducts);
 });
 
 // 2. Add New Item (Admin Only)
 router.post('/', protect, authorize('admin'), async (req,res) => {
     try {
-        const newProduct = new Product(req.body);
+        const newProduct = new Product({
+            ...req.body,
+            restaurant: req.user.restaurant 
+        });
         await newProduct.save();
         res.status(201).json(newProduct);
     } catch(error) {
@@ -38,7 +40,11 @@ router.post('/', protect, authorize('admin'), async (req,res) => {
 // 3. Toggle Availability (Kitchen/Admin)
 router.patch('/:id/toggle', protect, authorize('admin', 'kitchen'), async (req,res) => {
     try {
-        const product = await Product.findById(req.params.id);
+        const product = await Product.findOne({ 
+            _id: req.params.id, 
+            restaurant: req.user.restaurant 
+        });
+        
         if(!product) return res.status(404).json({ message: "Product not found" });
 
         product.isAvailable = !product.isAvailable;
