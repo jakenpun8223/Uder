@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from '../api/axios';
 import ProductCard from '../components/ProductCard';
+import FloatingCart from '../components/FloatingCart';
 
 const CATEGORIES = ['All', 'Main', 'Sushi', 'Drinks', 'Dessert', 'Starters'];
 
@@ -67,6 +68,7 @@ const Menu = () => {
                     No items found in {selectedCategory}.
                 </div>
             )}
+            <FloatingCart />
         </div>
     );
 };
