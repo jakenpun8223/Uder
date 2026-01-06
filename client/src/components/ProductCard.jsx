@@ -1,7 +1,9 @@
 import { useCart } from '../context/CartContext';
+import useAuth from '../hooks/useAuth';
 
 const ProductCard = ({ product }) => {
     const { addToCart, removeFromCart, cart } = useCart();
+    const { user } = useAuth();
     
     // Check quantity
     const cartItem = cart.find(item => item._id === product._id);
@@ -36,32 +38,41 @@ const ProductCard = ({ product }) => {
                 )}
             </div>
 
-            {/* Controls */}
+            {/* Controls - ONLY VISIBLE TO LOGGED IN STAFF */}
             <div className="mt-auto pt-4 border-t border-gray-100">
-                {quantity === 0 ? (
-                    <button 
-                        onClick={() => addToCart(product)}
-                        className="w-full bg-gray-100 hover:bg-primary hover:text-white text-gray-700 font-bold py-2 rounded-lg transition-colors"
-                    >
-                        Add to Order
-                    </button>
+                {user ? (
+                    <>
+                        {quantity === 0 ? (
+                            <button 
+                                onClick={() => addToCart(product)}
+                                className="w-full bg-gray-100 hover:bg-primary hover:text-white text-gray-700 font-bold py-2 rounded-lg transition-colors"
+                            >
+                                Add to Order
+                            </button>
+                        ) : (
+                            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-1">
+                                {/* FIX: High contrast Red Button for Minus */}
+                                <button 
+                                    onClick={() => removeFromCart(product._id)}
+                                    className="w-10 h-10 flex items-center justify-center bg-red-100 text-red-600 font-bold rounded-md hover:bg-red-200 transition"
+                                >
+                                    -
+                                </button>
+                                
+                                <span className="font-bold text-gray-800 text-lg">{quantity}</span>
+                                
+                                <button 
+                                    onClick={() => addToCart(product)}
+                                    className="w-10 h-10 flex items-center justify-center bg-primary text-white font-bold rounded-md hover:bg-orange-600 transition"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        )}
+                    </>
                 ) : (
-                    <div className="flex items-center justify-between bg-gray-50 rounded-lg p-1">
-                        <button 
-                            onClick={() => removeFromCart(product._id)}
-                            className="w-10 h-10 flex items-center justify-center bg-white text-red-500 shadow-sm rounded-md hover:bg-red-50 transition"
-                        >
-                            -
-                        </button>
-                        
-                        <span className="font-bold text-gray-800">{quantity}</span>
-                        
-                        <button 
-                            onClick={() => addToCart(product)}
-                            className="w-10 h-10 flex items-center justify-center bg-primary text-white shadow-sm rounded-md hover:bg-orange-600 transition"
-                        >
-                            +
-                        </button>
+                    <div className="text-center text-xs text-gray-400 italic">
+                        Login to place order
                     </div>
                 )}
             </div>
