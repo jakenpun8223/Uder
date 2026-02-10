@@ -7,6 +7,7 @@ import connectDB from './config/db.js';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import jwt from 'jsonwebtoken';
 
 // Import routes
 import productRoutes from './routes/productRoutes.js';
@@ -54,8 +55,30 @@ const server = http.createServer(app); // Wrap Express in a raw HTTP server
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173", // URL of your React Client (Vite default)
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST"],
+    credentials: true
   }
+});
+
+// [SECURE] Socket Middleware: Verify JWT from Cookie
+io.use((socket, next) => {
+    try {
+        // Parse cookies manually from the handshake headers
+        const cookieString = socket.handshake.headers.cookie;
+        if (!cookieString) return next(new Error("Authentication error: No cookies"));
+
+        // Extract 'jwt' cookie
+        const token = cookieString.split('; ').find(row => row.startsWith('jwt='))?.split('=')[1];
+        
+        if (!token) return next(new Error("Authentication error: No token"));
+
+        // Verify Token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        socket.user = decoded; // Attach user data (id, role, restaurant) to socket
+        next();
+    } catch (err) {
+        next(new Error("Authentication error"));
+    }
 });
 
 app.set('socketio', io); // Allows routes to access 'io'
@@ -69,6 +92,12 @@ io.on('connection', (socket) => {
     // Broadcast the order to the Kitchen
     io.emit('receive_order', data);
   });
+
+  // [SECURE] Join a private room for this specific restaurant
+  // This ensures events only go to staff in the SAME restaurant
+  if (socket.user.restaurant) {
+      socket.join(socket.user.restaurant);
+  }
 
   socket.on('disconnect', () => {
     console.log('User disconnected', socket.id);

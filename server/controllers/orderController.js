@@ -52,6 +52,10 @@ export const createOrder = async (req,res) => {
         });
         await newOrder.save();
 
+        const io = req.app.get('socketio');
+        // Send only to users in this restaurant
+        io.to(req.user.restaurant).emit('new_order', newOrder); 
+
         // CRITICAL: Mark as Occupied
         table.status = 'occupied';
         table.currentOrder = newOrder._id;
@@ -125,8 +129,8 @@ export const updateOrderStatus = async (req, res) => {
         if (!order) return res.status(404).json({ message: "Order not found" });
 
         // --- NEW: EMIT UPDATE ---
-        const io = req.app.get('socketio'); 
-        io.emit('order_updated', order);
+        const io = req.app.get('socketio');
+        io.to(req.user.restaurant).emit('order_updated', order);
         // ------------------------
 
         res.json(order);
