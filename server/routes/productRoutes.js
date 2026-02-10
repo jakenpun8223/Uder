@@ -8,6 +8,9 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const { restaurantId } = req.query;
+        if (!restaurantId || restaurantId === 'undefined') {
+            return res.status(400).json({ message: "Restaurant ID is required to view menu." });
+        }
         const menu = await Product.find({ restaurant: restaurantId, isAvailable: true });
         res.json(menu);
     } catch(error) {
