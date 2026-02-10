@@ -15,20 +15,19 @@ import MenuManager from './pages/MenuManager';
 import Menu from './pages/Menu';
 import Checkout from './pages/Checkout';
 import StaffManagement from './pages/StaffManagement';
+import WaiterDashboard from './pages/WaiterDashboard';
+// 1. IMPORT THE NEW PAGE HERE
+import TableManagement from './pages/TableManagement'; 
 import { socket } from './socket';
 
 // Security Guard
 const ProtectedRoute = ({ allowedRoles }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="p-4">Loading...</div>;
-  
   if (!user) return <Navigate to="/login" />;
-  
-  // Role Check
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-     return <Navigate to="/menu" />; // Redirect unauthorized users to menu
+     return <Navigate to="/menu" />; 
   }
-  
   return <Outlet />;
 };
 
@@ -44,36 +43,31 @@ function App() {
         <CartProvider>
           <WaiterProvider>
             <Navbar />
-
             <WaiterNotifications />
             
             <div className="container mx-auto p-4">
               <Routes>
-                {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/menu" element={<Menu />} />
 
-                {/* --- 1. SHARED ROUTES (Waiters, Kitchen, Admin) --- */}
-                {/* Waiters MUST be allowed here to place orders */}
                 <Route element={<ProtectedRoute allowedRoles={['kitchen', 'admin', 'staff']} />}>
                     <Route path='/checkout' element={<Checkout />} />
+                    <Route path='/waiter' element={<WaiterDashboard />} />
                 </Route>
 
-                {/* --- 2. KITCHEN MANAGEMENT (Kitchen, Admin) --- */}
-                {/* Waiters should NOT see the kitchen display or edit the menu */}
                 <Route element={<ProtectedRoute allowedRoles={['kitchen', 'admin']} />}>
                     <Route path="/kitchen" element={<KitchenDashboard socket={socket} />} />
                     <Route path="/manage-menu" element={<MenuManager />} />
                 </Route>
 
-                {/* --- 3. ADMIN ONLY (Owner) --- */}
-                {/* Only the Owner should hire/fire staff */}
+                {/* --- ADMIN ONLY --- */}
                 <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                     <Route path="/staff" element={<StaffManagement />} />
+                    {/* 2. ADD THE ROUTE HERE */}
+                    <Route path="/manage-tables" element={<TableManagement />} />
                 </Route>
 
-                {/* Catch all */}
                 <Route path="*" element={<Navigate to="/menu" />} />
               </Routes>
             </div>

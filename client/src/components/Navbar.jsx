@@ -4,9 +4,8 @@ import { useCart } from '../context/CartContext';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
-    const { restaurantId } = useCart(); // Get the stored ID
+    const { restaurantId } = useCart(); 
 
-    // Helper to build the link
     const menuLink = restaurantId ? `/menu?restaurant=${restaurantId}` : '/menu';
 
     return (
@@ -19,22 +18,27 @@ const Navbar = () => {
                 <div className="flex items-center gap-6 font-bold text-sm uppercase tracking-wide">
                     <Link to={menuLink} className="hover:text-primary">Menu</Link>
                     
-                    {/* ONLY SHOW IF USER IS LOGGED IN */}
                     {user ? (
                         <>
-                            {/* KITCHEN (Admins & Kitchen Staff) */}
                             {['admin', 'kitchen'].includes(user.role) && (
                                 <Link to="/kitchen" className="hover:text-primary">Kitchen</Link>
                             )}
                             
-                            {/* MANAGE MENU (Admins & Kitchen Staff) */}
                             {['admin', 'kitchen'].includes(user.role) && (
                                 <Link to="/manage-menu" className="hover:text-primary">Menu Mgr</Link>
                             )}
+                            {['admin', 'staff'].includes(user.role) && (
+                                <Link to="/waiter" className="font-bold text-blue-600 hover:text-blue-800">
+                                    My Station
+                                </Link>
+                            )}
 
-                            {/* STAFF (Admins ONLY) - THIS IS THE MISSING LINK */}
+                            {/* --- ADD THIS SECTION FOR ADMINS --- */}
                             {user.role === 'admin' && (
-                                <Link to="/staff" className="text-secondary hover:opacity-80">Manage Staff</Link>
+                                <>
+                                    <Link to="/manage-tables" className="text-blue-600 hover:opacity-80">Tables</Link>
+                                    <Link to="/staff" className="text-secondary hover:opacity-80">Staff</Link>
+                                </>
                             )}
 
                             <div className="flex items-center gap-4 ml-4 border-l pl-4 border-gray-300">

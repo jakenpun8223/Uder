@@ -1,32 +1,67 @@
+import { useEffect, useState } from 'react';
 import { useWaiter } from '../context/WaiterContext';
+import axios from '../api/axios';
 
 const TableSelector = () => {
     const { myTables, toggleTable } = useWaiter();
-    // Assuming 12 tables for now - you could fetch this from API
-    const allTables = Array.from({ length: 12 }, (_, i) => i + 1);
+    const [dbTables, setDbTables] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Fetch the real tables from the backend on mount
+    useEffect(() => {
+        const fetchTables = async () => {
+            try {
+                // This hits the GET /api/tables endpoint you already have
+                const response = await axios.get('/tables');
+                // Sort tables by number for better UI
+                const sortedTables = response.data.sort((a, b) => a.tableNumber - b.tableNumber);
+                setDbTables(sortedTables);
+            } catch (err) {
+                console.error("Failed to load tables", err);
+                setError("Could not load tables from server.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTables();
+    }, []);
+
+    if (loading) return <div className="text-gray-500 text-sm animate-pulse">Loading tables...</div>;
+    if (error) return <div className="text-red-500 text-sm">{error}</div>;
 
     return (
         <div className="bg-white p-4 rounded-lg shadow-md mb-6 border border-gray-200">
-            <h3 className="font-bold text-gray-700 mb-3">🔔 My Tables (Click to subscribe)</h3>
+            <div className="flex justify-between items-center mb-3">
+                <h3 className="font-bold text-gray-700">🔔 My Station (Click to subscribe)</h3>
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                    {myTables.length} Active
+                </span>
+            </div>
+            
             <div className="flex flex-wrap gap-2">
-                {allTables.map(num => (
+                {dbTables.map(table => (
                     <button
-                        key={num}
-                        onClick={() => toggleTable(num)}
+                        key={table._id}
+                        onClick={() => toggleTable(table.tableNumber)}
                         className={`
-                            w-10 h-10 rounded-full font-bold transition-all
-                            ${myTables.includes(num) 
-                                ? 'bg-primary text-white scale-110 shadow-md ring-2 ring-orange-200' 
-                                : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                            w-12 h-12 rounded-lg font-bold transition-all border-2 flex flex-col items-center justify-center
+                            ${myTables.includes(table.tableNumber) 
+                                ? 'bg-primary border-primary text-white shadow-lg scale-105' 
+                                : 'bg-white border-gray-200 text-gray-400 hover:border-primary hover:text-primary'
                             }
                         `}
                     >
-                        {num}
+                        <span className="text-sm">{table.tableNumber}</span>
+                        {/* Visual indicator for capacity or status could go here */}
+                        <span className="text-[8px] font-normal opacity-70">{table.capacity}p</span>
                     </button>
                 ))}
             </div>
-            <p className="text-xs text-gray-400 mt-2">
-                You will only receive notifications for the highlighted tables.
+            <p className="text-xs text-gray-400 mt-3 italic">
+                * You will only receive alerts for the highlighted tables.
+                This setting is saved to this device.
             </p>
         </div>
     );
