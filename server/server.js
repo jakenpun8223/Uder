@@ -25,7 +25,7 @@ const app = express();
 
 // Secutity Middleware
 app.use(helmet()) // Hides server info (e.g. "X-Powered-By: Express")
-
+/*
 // Rate Limiting (Prevent Brute Force on Login)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -33,7 +33,7 @@ const authLimiter = rateLimit({
   message: "Too many login attempts, please try again later"
 });
 app.use('/api/auth', authLimiter); // Apply ONLY to auth routes
-
+*/
 // 3. Middleware
 app.use(cors({
   origin: "http://localhost:5173", // My frontend URL
