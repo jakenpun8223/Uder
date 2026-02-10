@@ -92,6 +92,11 @@ router.patch('/:id/toggle', protect, authorize('admin', 'kitchen'), async (req,r
         product.isAvailable = !product.isAvailable;
         await product.save();
         
+        // 1. Get the socket instance
+        const io = req.app.get('socketio');
+        // 2. Send the update to everyone
+        io.emit('menu_updated', product);
+        
         res.json(product);
     } catch(error) {
         res.status(400).json({ message: error.message });

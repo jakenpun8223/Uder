@@ -6,6 +6,7 @@ import CallWaiter from '../components/CallWaiter';
 import useAuth from '../hooks/useAuth';
 import { useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { socket } from '../socket';
 
 const CATEGORIES = ['All', 'Main', 'Sushi', 'Drinks', 'Dessert', 'Starters'];
 
@@ -75,6 +76,36 @@ const Menu = () => {
         }
     }, [targetRestaurantId, setRestaurantId]);
 
+    // Listen for Real-Time Updates (Sold Out / Back in Stock)
+    useEffect(() => {
+        const handleMenuUpdate = (updatedProduct) => {
+            // Security: Ignore updates from other restaurants
+            if (updatedProduct.restaurant !== activeRestaurantId) return;
+
+            setProducts((prevProducts) => {
+                if (updatedProduct.isAvailable) {
+                    // Item is now AVAILABLE: Add it or Update it
+                    const exists = prevProducts.find(p => p._id === updatedProduct._id);
+                    if (exists) {
+                        return prevProducts.map(p => p._id === updatedProduct._id ? updatedProduct : p);
+                    } else {
+                        return [...prevProducts, updatedProduct];
+                    }
+                } else {
+                    // Item is now SOLD OUT: Remove it from the list
+                    return prevProducts.filter(p => p._id !== updatedProduct._id);
+                }
+            });
+        };
+
+        socket.on('menu_updated', handleMenuUpdate);
+
+        // Cleanup listener when leaving page
+        return () => {
+            socket.off('menu_updated', handleMenuUpdate);
+        };
+    }, [activeRestaurantId]);
+    
     // Filter Logic
     const filteredProducts = selectedCategory === 'All'
         ? products
