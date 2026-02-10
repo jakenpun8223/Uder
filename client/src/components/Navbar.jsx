@@ -1,18 +1,23 @@
 import { Link } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
+import { useCart } from '../context/CartContext';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
+    const { restaurantId } = useCart(); // Get the stored ID
+
+    // Helper to build the link
+    const menuLink = restaurantId ? `/menu?restaurant=${restaurantId}` : '/menu';
 
     return (
         <nav className="bg-white shadow-md p-4 mb-4">
             <div className="container mx-auto flex justify-between items-center">
-                <Link to="/menu" className="text-2xl font-black tracking-tighter text-gray-800">
+                <Link to={menuLink} className="text-2xl font-black tracking-tighter text-gray-800">
                     UDER<span className="text-primary">.</span>
                 </Link>
 
                 <div className="flex items-center gap-6 font-bold text-sm uppercase tracking-wide">
-                    <Link to="/menu" className="hover:text-primary">Menu</Link>
+                    <Link to={menuLink} className="hover:text-primary">Menu</Link>
                     
                     {/* ONLY SHOW IF USER IS LOGGED IN */}
                     {user ? (

@@ -5,6 +5,7 @@ import FloatingCart from '../components/FloatingCart';
 import CallWaiter from '../components/CallWaiter';
 import useAuth from '../hooks/useAuth';
 import { useSearchParams } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 
 const CATEGORIES = ['All', 'Main', 'Sushi', 'Drinks', 'Dessert', 'Starters'];
 
@@ -17,6 +18,7 @@ const Menu = () => {
     // If guest (Customer), use the URL param.
     const urlRestaurantId = searchParams.get('restaurant');
     const targetRestaurantId = user?.restaurant || urlRestaurantId;
+    const { setRestaurantId } = useCart();
 
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -66,6 +68,12 @@ const Menu = () => {
             controller.abort();
         };
     }, [targetRestaurantId]); // Only re-run if the ID changes
+
+    useEffect(() => {
+        if (targetRestaurantId) {
+            setRestaurantId(targetRestaurantId);
+        }
+    }, [targetRestaurantId, setRestaurantId]);
 
     // Filter Logic
     const filteredProducts = selectedCategory === 'All'

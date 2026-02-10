@@ -7,6 +7,18 @@ export const useCart = () => useContext(CartContext);
 export const CartProvider = ({ children }) => {
     const [cart, setCart] = useState([]);
 
+    // 1. Initialize from LocalStorage so it survives refreshes
+    const [restaurantId, setRestaurantIdState] = useState(() => {
+        return sessionStorage.getItem('uder_restaurant_id') || null;
+    });
+
+    // 2. Helper to set ID and save to storage
+    const setRestaurantId = (id) => {
+        if (!id) return;
+        setRestaurantIdState(id);
+        sessionStorage.setItem('uder_restaurant_id', id);
+    };
+
     // Add item to cart
     const addToCart = (product) => {
         setCart((prevCart) => {
@@ -47,7 +59,15 @@ export const CartProvider = ({ children }) => {
     }, [cart]);
 
     return (
-        <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, cartTotal }}>
+        <CartContext.Provider value={{ 
+            cart, 
+            addToCart, 
+            removeFromCart, 
+            clearCart, 
+            cartTotal,
+            restaurantId,    // Export the ID
+            setRestaurantId  // Export the setter
+        }}>
             {children}
         </CartContext.Provider>
     );
