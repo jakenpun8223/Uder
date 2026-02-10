@@ -13,13 +13,19 @@ const CATEGORIES = ['All', 'Main', 'Sushi', 'Drinks', 'Dessert', 'Starters'];
 const Menu = () => {
     const [searchParams] = useSearchParams();
     const { user } = useAuth();
+    const { setRestaurantId, restaurantId: storedRestaurantId } = useCart();
     
-    // 1. Determine the Restaurant ID
-    // If logged in (Staff/Kitchen), use their ID.
-    // If guest (Customer), use the URL param.
+    // Logic: Use Logged-in Restaurant ID OR URL Restaurant ID OR Stored ID
     const urlRestaurantId = searchParams.get('restaurant');
-    const targetRestaurantId = user?.restaurant || urlRestaurantId;
-    const { setRestaurantId } = useCart();
+    const sourceRestaurantId = user?.restaurant || urlRestaurantId;
+    const activeRestaurantId = sourceRestaurantId || storedRestaurantId;
+
+    // Sync ID to storage
+    useEffect(() => {
+        if (sourceRestaurantId && sourceRestaurantId !== storedRestaurantId) {
+            setRestaurantId(sourceRestaurantId);
+        }
+    }, [sourceRestaurantId, storedRestaurantId, setRestaurantId]);
 
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -33,7 +39,7 @@ const Menu = () => {
 
         const fetchProducts = async () => {
             // If we don't have an ID yet, don't fetch anything (or show a landing page)
-            if (!targetRestaurantId) {
+            if (!sourceRestaurantId) {
                 if (isMounted) {
                     setLoading(false); 
                     // Optional: Set a specific error if you want to force a selection
@@ -47,7 +53,7 @@ const Menu = () => {
                 setError(null);
                 
                 // Pass restaurantId clearly in the query string
-                const { data } = await axios.get(`/products?restaurantId=${targetRestaurantId}`, {
+                const { data } = await axios.get(`/products?restaurantId=${sourceRestaurantId}`, {
                     signal: controller.signal
                 });
                 
@@ -68,13 +74,7 @@ const Menu = () => {
             isMounted = false;
             controller.abort();
         };
-    }, [targetRestaurantId]); // Only re-run if the ID changes
-
-    useEffect(() => {
-        if (targetRestaurantId) {
-            setRestaurantId(targetRestaurantId);
-        }
-    }, [targetRestaurantId, setRestaurantId]);
+    }, [sourceRestaurantId]); // Only re-run if the ID changes
 
     // Listen for Real-Time Updates (Sold Out / Back in Stock)
     useEffect(() => {
@@ -105,7 +105,7 @@ const Menu = () => {
             socket.off('menu_updated', handleMenuUpdate);
         };
     }, [activeRestaurantId]);
-    
+
     // Filter Logic
     const filteredProducts = selectedCategory === 'All'
         ? products
@@ -114,7 +114,7 @@ const Menu = () => {
     if (loading) return <div className="text-center p-10 font-bold text-gray-500">Loading Menu...</div>;
     
     // 3. Handle Missing ID Case (Guest visited /menu without a link)
-    if (!targetRestaurantId) return (
+    if (!sourceRestaurantId) return (
         <div className="text-center p-10">
             <h2 className="text-xl font-bold text-gray-700">Welcome to Uder</h2>
             <p className="text-gray-500">Please scan a restaurant QR code to view the menu.</p>
