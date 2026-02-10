@@ -32,6 +32,7 @@ export const WaiterProvider = ({ children }) => {
 
     // Listen for socket events
     useEffect(() => {
+        if (!socket.connected) socket.connect();
         if (!user || (user.role !== 'staff' && user.role !== 'admin')) return;
 
         const handleCall = (data) => {
@@ -43,23 +44,54 @@ export const WaiterProvider = ({ children }) => {
                     id: Date.now(),
                     table: data.tableNumber,
                     message: data.message || `Table ${data.tableNumber} needs help!`,
+                    type: 'alert',
                     time: new Date().toLocaleTimeString()
                 };
 
                 setNotifications(prev => [newNotif, ...prev]);
+                playNotificationSound();
 
                 // Play Sound (Optional)
                 // new Audio('/ping.mp3').play().catch(e => console.log(e));
             }
         };
 
-        socket.on('table_calling', handleCall);
+        const handleOrderUpdate = (order) => {
+            // 1. Check if this order belongs to a table I am watching
+            // 2. Check if the status is specifically 'ready'
+            if (myTables.includes(order.tableNumber) && order.status === 'ready') {
+                const newNotif = {
+                    id: Date.now(),
+                    table: order.tableNumber,
+                    message: `Order for Table ${order.tableNumber} is Ready!`,
+                    type: 'success', // [NEW] Green type
+                    time: new Date().toLocaleTimeString()
+                };
+                setNotifications(prev => [newNotif, ...prev]);
+                playNotificationSound(); // [NEW] Trigger sound
+            }
+        };
 
-        return () => socket.off('table_calling', handleCall);
+        socket.on('table_calling', handleCall);
+        socket.on('order_updated', handleOrderUpdate); // [NEW] Register the listener
+
+        return () => {
+            socket.off('table_calling', handleCall);
+            socket.off('order_updated', handleOrderUpdate); // [NEW] Clean up
+        };
     }, [user, myTables]);
 
     const removeNotification = (id) => {
         setNotifications(prev => prev.filter(n => n.id !== id));
+    };
+
+    const playNotificationSound = () => {
+        try {
+            const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+            audio.play().catch(err => console.error("Audio play blocked:", err));
+        } catch (e) {
+            console.error("Audio error", e);
+        }
     };
 
     return (
