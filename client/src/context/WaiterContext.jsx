@@ -81,7 +81,7 @@ export const WaiterProvider = ({ children }) => {
                 // A. Visual Toast
                 toast.success(msg, {
                     duration: 5000, 
-                    style: { border: '1px solid #4ade80', padding: '16px', color: '#1f2937' },
+                    style: { background: '1px solid #4ade80', padding: '16px', color: '#1f2937' },
                 });
 
                 playSoftSound();
