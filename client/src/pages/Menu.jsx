@@ -15,17 +15,17 @@ const Menu = () => {
     const { user } = useAuth();
     const { setRestaurantId, restaurantId: storedRestaurantId } = useCart();
     
-    // Logic: Use Logged-in Restaurant ID OR URL Restaurant ID OR Stored ID
+    // 1. ROBUST ID RESOLUTION: Check User -> URL -> LocalStorage -> Context
     const urlRestaurantId = searchParams.get('restaurant');
-    const sourceRestaurantId = user?.restaurant || urlRestaurantId;
-    const activeRestaurantId = sourceRestaurantId || storedRestaurantId;
+    const guestRestaurantId = localStorage.getItem('guest_restaurantId');
+    const activeRestaurantId = user?.restaurant || urlRestaurantId || guestRestaurantId || storedRestaurantId;
 
-    // Sync ID to storage
+    // Sync ID to Context/Storage so it persists
     useEffect(() => {
-        if (sourceRestaurantId && sourceRestaurantId !== storedRestaurantId) {
-            setRestaurantId(sourceRestaurantId);
+        if (activeRestaurantId && activeRestaurantId !== storedRestaurantId) {
+            setRestaurantId(activeRestaurantId);
         }
-    }, [sourceRestaurantId, storedRestaurantId, setRestaurantId]);
+    }, [activeRestaurantId, storedRestaurantId, setRestaurantId]);
 
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -38,13 +38,9 @@ const Menu = () => {
         const controller = new AbortController();
 
         const fetchProducts = async () => {
-            // If we don't have an ID yet, don't fetch anything (or show a landing page)
-            if (!sourceRestaurantId) {
-                if (isMounted) {
-                    setLoading(false); 
-                    // Optional: Set a specific error if you want to force a selection
-                    // setError("No restaurant selected."); 
-                }
+            // If we STILL don't have an ID, show the "Please scan" screen
+            if (!activeRestaurantId) {
+                if (isMounted) setLoading(false); 
                 return;
             }
 
@@ -52,8 +48,8 @@ const Menu = () => {
                 setLoading(true);
                 setError(null);
                 
-                // Pass restaurantId clearly in the query string
-                const { data } = await axios.get(`/products?restaurantId=${sourceRestaurantId}`, {
+                // Fetch using activeRestaurantId
+                const { data } = await axios.get(`/products?restaurantId=${activeRestaurantId}`, {
                     signal: controller.signal
                 });
                 
@@ -74,10 +70,12 @@ const Menu = () => {
             isMounted = false;
             controller.abort();
         };
-    }, [sourceRestaurantId]); // Only re-run if the ID changes
+    }, [activeRestaurantId]);
 
-    // Listen for Real-Time Updates (Sold Out / Back in Stock)
+    // Real-Time Inventory Updates
     useEffect(() => {
+        if (!activeRestaurantId) return;
+
         const handleMenuUpdate = (updatedProduct) => {
             // Security: Ignore updates from other restaurants
             if (updatedProduct.restaurant !== activeRestaurantId) return;
@@ -86,11 +84,8 @@ const Menu = () => {
                 if (updatedProduct.isAvailable) {
                     // Item is now AVAILABLE: Add it or Update it
                     const exists = prevProducts.find(p => p._id === updatedProduct._id);
-                    if (exists) {
-                        return prevProducts.map(p => p._id === updatedProduct._id ? updatedProduct : p);
-                    } else {
+                    if (exists) return prevProducts.map(p => p._id === updatedProduct._id ? updatedProduct : p);
                         return [...prevProducts, updatedProduct];
-                    }
                 } else {
                     // Item is now SOLD OUT: Remove it from the list
                     return prevProducts.filter(p => p._id !== updatedProduct._id);
@@ -113,20 +108,23 @@ const Menu = () => {
 
     if (loading) return <div className="text-center p-10 font-bold text-gray-500">Loading Menu...</div>;
     
-    // 3. Handle Missing ID Case (Guest visited /menu without a link)
-    if (!sourceRestaurantId) return (
-        <div className="text-center p-10">
-            <h2 className="text-xl font-bold text-gray-700">Welcome to Uder</h2>
-            <p className="text-gray-500">Please scan a restaurant QR code to view the menu.</p>
+    if (!activeRestaurantId) return (
+        <div className="text-center p-10 flex flex-col items-center justify-center h-screen">
+            <div className="text-6xl mb-4">🍽️</div>
+            <h2 className="text-2xl font-bold text-gray-800">Welcome to Uder</h2>
+            <p className="text-gray-500 mt-2">Please scan a table's QR code to view the menu.</p>
         </div>
     );
 
     if (error) return <div className="text-center text-red-500 p-10">{error}</div>;
 
-    const isStaff = user && (user.role === 'staff' || user.role === 'admin');
+    const isStaff = user && ['staff', 'admin', 'kitchen'].includes(user.role);
+    
+    // Grab table number from URL or Guest Storage
+    const tableNumber = searchParams.get('table') || localStorage.getItem('guest_tableNumber');
 
     return (
-        <div className="max-w-7xl mx-auto pb-20">
+        <div className="max-w-7xl mx-auto pb-20 p-4">
             {/* Category Filter */}
             <div className="flex overflow-x-auto space-x-4 py-4 mb-6 scrollbar-hide">
                 {CATEGORIES.map(cat => (
@@ -157,11 +155,8 @@ const Menu = () => {
                 </div>
             )}
             
-            {isStaff ? (
-                <FloatingCart tableNumber={searchParams.get('table')} /> 
-            ) : (
-                <CallWaiter />
-            )}
+            {/* Waiter sees Cart with table number, Guest sees Call Waiter */}
+            {isStaff ? <FloatingCart tableNumber={tableNumber} /> : <CallWaiter />}
         </div>
     );
 };
