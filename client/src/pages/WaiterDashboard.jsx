@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import TableSelector from '../components/TableSelector';
 import { useWaiter } from '../context/WaiterContext';
-import { socket } from '../socket'; // Use shared socket instance
+import { socket } from '../socket'; 
 import axios from '../api/axios';
 
 const WaiterDashboard = () => {
-    const { notifications, myTables } = useWaiter();
+    // 1. Pull removeNotification from context!
+    const { notifications, myTables, removeNotification } = useWaiter();
     const [myOrders, setMyOrders] = useState([]);
 
     // 1. Fetch Active Orders on Load
@@ -45,7 +46,6 @@ const WaiterDashboard = () => {
                 }
                 return prev;
             });
-
         };
 
         socket.on('order_updated', handleUpdate);
@@ -64,9 +64,7 @@ const WaiterDashboard = () => {
             <div className="lg:col-span-2 space-y-8">
                 <header>
                     <h1 className="text-3xl font-black text-gray-800">My Station 🛎️</h1>
-                    <p className="text-gray-500 mt-2">
-                        Select tables to manage orders and alerts.
-                    </p>
+                    <p className="text-gray-500 mt-2">Select tables to manage orders and alerts.</p>
                 </header>
                 <TableSelector />
             </div>
@@ -77,20 +75,40 @@ const WaiterDashboard = () => {
                 {/* 1. Notifications Card */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h3 className="font-bold text-gray-800 text-lg mb-4 flex justify-between">
-                        Alerts <span className="text-red-500">{notifications.length}</span>
+                        Recent Alerts 
+                        {notifications.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">{notifications.length}</span>}
                     </h3>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {notifications.length === 0 ? <p className="text-gray-400 text-sm">No active alerts.</p> : 
-                            notifications.map(n => (
-                                <div key={n.id} className="p-3 bg-red-50 text-red-700 text-sm rounded border border-red-100">
-                                    <strong>Table {n.table}</strong>: {n.message}
-                                </div>
-                            ))
+                    
+                    <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                        {notifications.length === 0 ? <p className="text-gray-400 text-sm">No recent activity.</p> : 
+                            notifications.map(n => {
+                                const isSuccess = n.type === 'success';
+                                return (
+                                    <div key={n.id} className={`p-3 text-sm rounded-lg border shadow-sm flex justify-between items-center ${isSuccess ? 'bg-green-50 text-green-900 border-green-200' : 'bg-red-50 text-red-900 border-red-200'}`}>
+                                        <div className="flex items-start gap-3">
+                                            {/* Icons for immediate visual difference */}
+                                            <span className="text-2xl mt-0.5">{isSuccess ? '🍲' : '🔔'}</span>
+                                            <div>
+                                                <span className="block font-bold">Table {n.table}</span>
+                                                <span className="block text-xs mt-0.5">{n.message}</span>
+                                                <span className="text-[10px] opacity-60 mt-1 block font-mono">{n.time}</span>
+                                            </div>
+                                        </div>
+                                        {/* Acknowledge Button */}
+                                        <button 
+                                            onClick={() => removeNotification(n.id)}
+                                            className={`px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wider transition-colors ${isSuccess ? 'bg-green-200 hover:bg-green-300 text-green-800' : 'bg-red-200 hover:bg-red-300 text-red-800'}`}
+                                        >
+                                            Ack
+                                        </button>
+                                    </div>
+                                )
+                            })
                         }
                     </div>
                 </div>
 
-                {/* 2. My Active Orders Card */}
+                {/* My Active Orders Card */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                     <h3 className="font-bold text-gray-800 text-lg mb-4">Kitchen Progress</h3>
                     <div className="space-y-3">
@@ -98,14 +116,14 @@ const WaiterDashboard = () => {
                             <p className="text-gray-400 text-sm">No active orders for your tables.</p>
                         ) : (
                             myOrders.map(order => (
-                                <div key={order._id} className="p-4 border rounded-lg bg-gray-50">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="font-bold text-gray-800">Table {order.tableNumber}</span>
-                                        <Badge status={order.status} />
+                                <div key={order._id} className="p-4 border rounded-lg bg-gray-50 flex justify-between items-center">
+                                    <div>
+                                        <span className="font-bold text-gray-800 block mb-1">Table {order.tableNumber}</span>
+                                        <p className="text-xs text-gray-500">
+                                            {order.items.length} items • ${order.totalAmount}
+                                        </p>
                                     </div>
-                                    <p className="text-xs text-gray-500">
-                                        {order.items.length} items • ${order.totalAmount}
-                                    </p>
+                                    <Badge status={order.status} />
                                 </div>
                             ))
                         )}
@@ -121,7 +139,7 @@ const Badge = ({ status }) => {
     const colors = {
         pending: 'bg-gray-200 text-gray-700',
         preparing: 'bg-blue-100 text-blue-800',
-        ready: 'bg-green-100 text-green-800 border-green-200 border animate-pulse',
+        ready: 'bg-green-100 text-green-800 border-green-200 border-2 animate-pulse',
         served: 'bg-gray-100 text-gray-400'
     };
     return (
