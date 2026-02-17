@@ -22,6 +22,7 @@ import Menu from "./pages/Menu";
 import Checkout from "./pages/Checkout";
 import StaffManagement from "./pages/StaffManagement";
 import WaiterDashboard from "./pages/WaiterDashboard";
+import ScanSession from './pages/ScanSession';
 // 1. IMPORT THE NEW PAGE HERE
 import TableManagement from "./pages/TableManagement";
 import { socket } from "./socket";
@@ -54,6 +55,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/menu" element={<Menu />} />
+                <Route path="/scan/:restaurantId/:tableNumber" element={<ScanSession />} />
 
                 <Route
                   element={
