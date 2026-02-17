@@ -11,19 +11,19 @@ const TableManagement = () => {
     const [error, setError] = useState('');
 
     useEffect(() => {
-    const fetchTables = async () => {
-        try {
+        const fetchTables = async () => {
+            try {
                 const { data } = await axios.get('/tables');
                 // Sort tables numerically
                 const sortedTables = data.sort((a, b) => a.tableNumber - b.tableNumber);
                 setTables(sortedTables);
-        } catch (err) {
-            console.error(err);
+            } catch (err) {
+                console.error(err);
                 setError("Failed to load tables.");
             } finally {
                 setLoading(false);
-        }
-    };
+            }
+        };
         fetchTables();
     }, []);
 
@@ -65,25 +65,25 @@ const TableManagement = () => {
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8 max-w-md">
                 <h2 className="font-bold text-lg mb-4">Add New Table</h2>
                 {error && <div className="bg-red-100 text-red-700 p-2 rounded mb-4 text-sm">{error}</div>}
-
+                
                 <form onSubmit={handleAddTable} className="flex gap-4">
-                            <input 
-                                type="number" 
+                    <input 
+                        type="number"
                         min="1"
-                                required
+                        required
                         value={newTableNumber}
                         onChange={(e) => setNewTableNumber(e.target.value)}
                         placeholder="Table Number"
                         className="flex-1 border border-gray-300 rounded-lg px-4 py-2"
-                            />
-                        <button 
-                            type="submit" 
+                    />
+                    <button 
+                        type="submit"
                         className="bg-primary hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg transition"
-                        >
-                            Add Table
-                        </button>
-                    </form>
-                </div>
+                    >
+                        Add Table
+                    </button>
+                </form>
+            </div>
 
             {/* Tables Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -117,7 +117,7 @@ const TableManagement = () => {
                         </div>
                     );
                 })}
-                    </div>
+            </div>
 
             {tables.length === 0 && (
                 <div className="text-center text-gray-500 py-12 bg-gray-50 rounded-lg border border-gray-200">

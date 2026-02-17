@@ -85,7 +85,7 @@ const Menu = () => {
                     // Item is now AVAILABLE: Add it or Update it
                     const exists = prevProducts.find(p => p._id === updatedProduct._id);
                     if (exists) return prevProducts.map(p => p._id === updatedProduct._id ? updatedProduct : p);
-                        return [...prevProducts, updatedProduct];
+                    return [...prevProducts, updatedProduct];
                 } else {
                     // Item is now SOLD OUT: Remove it from the list
                     return prevProducts.filter(p => p._id !== updatedProduct._id);
