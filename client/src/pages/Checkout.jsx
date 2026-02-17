@@ -42,7 +42,6 @@ const Checkout = () => {
             });
 
             clearCart();
-            alert('Order placed successfully!');
             navigate('/menu'); 
 
         } catch (err) {
