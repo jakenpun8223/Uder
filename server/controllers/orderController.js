@@ -6,27 +6,55 @@ import Table from '../models/Table.js';
 export const createOrder = async (req,res) => {
     try{
         const { tableNumber, items } = req.body;
-        // items expected format: [{ product: "productId", quantity: 2 }]
 
-        // VALIDATION: Does this table exist?
         const table = await Table.findOne({ 
             tableNumber, 
             restaurant: req.user.restaurant 
         });
 
         if(!table){
-            return res.status(404).json({ message: `Table ${tableNumber} does not exist in resturant.` });
+            return res.status(404).json({ message: `Table ${tableNumber} does not exist.` });
         }
 
-        // VALIDATION: Is it already occupied?
-        if(table.status === 'occupied'){
-            return res.status(400).json({ message: `Table ${tableNumber} is already occupied. Add items to the existing order instead.` });
+        // --- NEW LOGIC: APPEND IF OCCUPIED ---
+        if(table.status === 'occupied' && table.currentOrder){
+            // 1. Find the existing order
+            const existingOrder = await Order.findById(table.currentOrder);
+            
+            if(existingOrder) {
+                // 2. Add new items to it
+                for (const item of items){
+                    const productDoc = await Product.findOne({ 
+                        _id: item.product, 
+                        restaurant: req.user.restaurant 
+                    });
+
+                    if(productDoc){
+                        existingOrder.items.push({
+                            product: productDoc._id,
+                            quantity: item.quantity,
+                            name: productDoc.name,
+                            price: productDoc.price
+                        });
+                        existingOrder.totalAmount += productDoc.price * item.quantity;
+                    }
+                }
+                
+                await existingOrder.save();
+
+                // 3. Emit update
+                const io = req.app.get('socketio');
+                io.to(req.user.restaurant).emit('order_updated', existingOrder);
+
+                return res.status(200).json(existingOrder);
+            }
+            // If active order missing (data corruption), fall through to create new one
         }
+        // -------------------------------------
 
         let totalAmount = 0;
         const finalItems = [];
 
-        //Fetch real prices from DB to be scure
         for (const item of items){
             const productDoc = await Product.findOne({ 
                 _id: item.product, 
@@ -37,7 +65,7 @@ export const createOrder = async (req,res) => {
                 finalItems.push({
                     product: productDoc._id,
                     quantity: item.quantity,
-                    name: productDoc.name, // Snapshot name in case it changes later
+                    name: productDoc.name,
                     price: productDoc.price
                 });
                 totalAmount += productDoc.price * item.quantity;
@@ -53,10 +81,8 @@ export const createOrder = async (req,res) => {
         await newOrder.save();
 
         const io = req.app.get('socketio');
-        // Send only to users in this restaurant
         io.to(req.user.restaurant).emit('new_order', newOrder); 
 
-        // CRITICAL: Mark as Occupied
         table.status = 'occupied';
         table.currentOrder = newOrder._id;
         await table.save();

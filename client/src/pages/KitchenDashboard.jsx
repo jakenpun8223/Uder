@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from '../api/axios';
+import { socket } from '../socket'; // Use shared socket
 
 const KitchenDashboard = ({ socket }) => {
     const [orders, setOrders] = useState([]);

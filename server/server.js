@@ -87,17 +87,14 @@ app.set('socketio', io); // Allows routes to access 'io'
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // Example: Listen for a new order
-  socket.on('send_order', (data) => {
-    // Broadcast the order to the Kitchen
-    io.emit('receive_order', data);
+  // --- FIX: Users must join their restaurant room ---
+  socket.on('join_restaurant', (restaurantId) => {
+    if (restaurantId) {
+      socket.join(restaurantId);
+      console.log(`Socket ${socket.id} joined restaurant: ${restaurantId}`);
+    }
   });
-
-  // [SECURE] Join a private room for this specific restaurant
-  // This ensures events only go to staff in the SAME restaurant
-  if (socket.user.restaurant) {
-      socket.join(socket.user.restaurant);
-  }
+  // ------------------------------------------------
 
   socket.on('disconnect', () => {
     console.log('User disconnected', socket.id);

@@ -88,16 +88,12 @@ router.get('/', protect, async (req,res) => {
     }
 });
 
-// Create a Table (Admin Only - Setup)
-router.post('/', protect, authorize('admin'), async (req,res) => {
+// [WAITER/ADMIN] Create a Table
+// Changed authorize('admin') -> authorize('admin', 'staff')
+router.post('/', protect, authorize('admin', 'staff'), async (req,res) => {
     try{
         const { tableNumber, capacity } = req.body;
-
-        const existingTable = await Table.findOne({ 
-            tableNumber, 
-            restaurant: req.user.restaurant 
-        });
-
+        const existingTable = await Table.findOne({ tableNumber, restaurant: req.user.restaurant });
         if(existingTable) return res.status(400).json({ message: "Table already exists" });
 
         const newTable = await Table.create({ 
@@ -105,7 +101,9 @@ router.post('/', protect, authorize('admin'), async (req,res) => {
             capacity,
             restaurant: req.user.restaurant 
         });
-
+        // EMIT EVENT
+        const io = req.app.get('socketio');
+        io.to(req.user.restaurant).emit('table_added', newTable); // Broadcast to room
         res.status(201).json(newTable);
     }
     catch(error){
@@ -113,22 +111,68 @@ router.post('/', protect, authorize('admin'), async (req,res) => {
     }
 });
 
-// Clear/Free a Table (When customer leave)
+// [WAITER/ADMIN] Edit Table (Capacity, Status)
+router.put('/:id', protect, authorize('admin', 'staff'), async (req, res) => {
+    try {
+        const { capacity, status, tableNumber } = req.body;
+        
+        // Prevent duplicate numbers if changing number
+        if(tableNumber) {
+            const duplicate = await Table.findOne({ 
+                tableNumber, 
+                restaurant: req.user.restaurant, 
+                _id: { $ne: req.params.id } 
+            });
+            if(duplicate) return res.status(400).json({ message: "Table number already taken" });
+        }
+
+        const updatedTable = await Table.findOneAndUpdate(
+            { _id: req.params.id, restaurant: req.user.restaurant },
+            req.body, // Update whatever fields are sent
+            { new: true }
+        );
+
+        if(!updatedTable) return res.status(404).json({ message: "Table not found" });
+        // EMIT EVENT
+        const io = req.app.get('socketio');
+        io.to(req.user.restaurant).emit('table_updated', updatedTable);
+        res.json(updatedTable);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// [WAITER/ADMIN] Delete Table
+router.delete('/:id', protect, authorize('admin', 'staff'), async (req, res) => {
+    try {
+        const table = await Table.findOneAndDelete({ 
+            _id: req.params.id, 
+            restaurant: req.user.restaurant 
+        });
+        if(!table) return res.status(404).json({ message: "Table not found" });
+        // EMIT EVENT
+        const io = req.app.get('socketio');
+        io.to(req.user.restaurant).emit('table_deleted', req.params.id);
+        res.json({ message: "Table removed" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Clear/Free a Table (Keep this existing route)
 router.patch('/:id/free', protect, authorize('admin', 'staff'), async (req,res) => {
+    // ... existing code ...
     try{
         const table = await Table.findOne({ 
             _id: req.params.id, 
             restaurant: req.user.restaurant 
         });
-        
         if(!table) return res.status(404).json({ message: "Table not found" });
-
         table.status = 'available';
         table.currentOrder = null;
         await table.save();
         res.json(table);
-    }
-    catch(error){
+    } catch(error){
         res.status(500).json({ message: error.message });
     }
 });

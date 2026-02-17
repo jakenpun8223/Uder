@@ -32,6 +32,16 @@ const ProtectedRoute = ({ allowedRoles }) => {
 };
 
 function App() {
+  const { user } = useAuth(); // Get the user from your hook
+
+  // --- FIX: Join Room on Login ---
+  useEffect(() => {
+    if (user && user.restaurant) {
+      socket.emit('join_restaurant', user.restaurant);
+    }
+  }, [user]);
+  // -------------------------------
+
   useEffect(() => {
     socket.on('connect', () => console.log('Connected:', socket.id));
     return () => socket.off('connect');
@@ -54,6 +64,10 @@ function App() {
                 <Route element={<ProtectedRoute allowedRoles={['kitchen', 'admin', 'staff']} />}>
                     <Route path='/checkout' element={<Checkout />} />
                     <Route path='/waiter' element={<WaiterDashboard />} />
+                </Route>
+
+                <Route element={<ProtectedRoute allowedRoles={['staff', 'admin']} />}>
+                <Route path="/manage-tables" element={<TableManagement />} />
                 </Route>
 
                 <Route element={<ProtectedRoute allowedRoles={['kitchen', 'admin']} />}>
