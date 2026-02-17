@@ -89,7 +89,7 @@ const TableManagement = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {tables.map(table => {
                     // Generate the specific Scan URL for this table
-                    const scanUrl = `${frontendUrl}/scan/${user.restaurant}/${table.tableNumber}`;
+                    const scanUrl = `${frontendUrl}/menu?restaurant=${user.restaurant}&table=${table.tableNumber}`;
 
                     return (
                         <div key={table._id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col items-center text-center">

@@ -32,6 +32,17 @@ const Menu = () => {
     const [error, setError] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState('All');
 
+    const urlTable = searchParams.get('table');
+    const guestTable = localStorage.getItem('guest_tableNumber');
+    const activeTable = urlTable || guestTable;
+
+    // Save the table to local storage if it came from the URL
+    useEffect(() => {
+        if (urlTable) {
+            localStorage.setItem('guest_tableNumber', urlTable);
+        }
+    }, [urlTable]);
+    
     // 2. Single, Unified Fetch Effect
     useEffect(() => {
         let isMounted = true; // Prevents state updates if component unmounts
@@ -156,7 +167,7 @@ const Menu = () => {
             )}
             
             {/* Waiter sees Cart with table number, Guest sees Call Waiter */}
-            {isStaff ? <FloatingCart tableNumber={tableNumber} /> : <CallWaiter />}
+            {isStaff ? <FloatingCart tableNumber={activeTable} /> : <CallWaiter />}
         </div>
     );
 };
