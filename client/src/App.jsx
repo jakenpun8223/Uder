@@ -15,9 +15,10 @@ import MenuManager from './pages/MenuManager';
 import Menu from './pages/Menu';
 import Checkout from './pages/Checkout';
 import StaffManagement from './pages/StaffManagement';
-import WaiterDashboard from './pages/WaiterDashboard';
-// 1. IMPORT THE NEW PAGE HERE
 import TableManagement from './pages/TableManagement'; 
+import WaiterDashboard from './pages/WaiterDashboard'; 
+
+// Import Socket
 import { socket } from './socket';
 
 // Security Guard
@@ -31,20 +32,27 @@ const ProtectedRoute = ({ allowedRoles }) => {
   return <Outlet />;
 };
 
+// Wrapper component to handle Socket Join
+const SocketManager = () => {
+    const { user } = useAuth();
+
+    useEffect(() => {
+        // Only try to join if user exists and has a restaurant ID
+        if (user && user.restaurant && socket) {
+            console.log("Joining restaurant room:", user.restaurant);
+            socket.emit('join_restaurant', user.restaurant);
+        }
+    }, [user]); // Only re-run if user changes
+
+    return null; // This component renders nothing, just handles logic
+};
+
 function App() {
-  const { user } = useAuth(); // Get the user from your hook
-
-  // --- FIX: Join Room on Login ---
   useEffect(() => {
-    if (user && user.restaurant) {
-      socket.emit('join_restaurant', user.restaurant);
+    if(socket) {
+        socket.on('connect', () => console.log('Connected to server:', socket.id));
+        return () => socket.off('connect');
     }
-  }, [user]);
-  // -------------------------------
-
-  useEffect(() => {
-    socket.on('connect', () => console.log('Connected:', socket.id));
-    return () => socket.off('connect');
   }, []);
 
   return (
@@ -52,6 +60,9 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <WaiterProvider>
+            {/* Active Socket Manager inside Auth Context */}
+            <SocketManager />
+            
             <Navbar />
             <WaiterNotifications />
             
@@ -61,25 +72,25 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/menu" element={<Menu />} />
 
+                {/* Shared Routes */}
                 <Route element={<ProtectedRoute allowedRoles={['kitchen', 'admin', 'staff']} />}>
                     <Route path='/checkout' element={<Checkout />} />
                     <Route path='/waiter' element={<WaiterDashboard />} />
                 </Route>
 
-                <Route element={<ProtectedRoute allowedRoles={['staff', 'admin']} />}>
-                <Route path="/manage-tables" element={<TableManagement />} />
-                </Route>
-
+                {/* Kitchen & Menu */}
                 <Route element={<ProtectedRoute allowedRoles={['kitchen', 'admin']} />}>
-                    <Route path="/kitchen" element={<KitchenDashboard socket={socket} />} />
+                    <Route path="/kitchen" element={<KitchenDashboard />} />
                     <Route path="/manage-menu" element={<MenuManager />} />
                 </Route>
 
-                {/* --- ADMIN ONLY --- */}
+                {/* Admin Only */}
+                <Route element={<ProtectedRoute allowedRoles={['admin', 'staff']} />}>
+                    <Route path="/manage-tables" element={<TableManagement />} />
+                </Route>
+                
                 <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                     <Route path="/staff" element={<StaffManagement />} />
-                    {/* 2. ADD THE ROUTE HERE */}
-                    <Route path="/manage-tables" element={<TableManagement />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/menu" />} />
