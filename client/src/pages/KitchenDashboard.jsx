@@ -1,12 +1,20 @@
 import { useState, useEffect } from 'react';
 import axios from '../api/axios';
+import toast from 'react-hot-toast'; // 1. Import Toast
 
 const KitchenDashboard = ({ socket }) => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    // 1. Fetch Initial Orders
+    // Kitchen Bell Sound helper
+    const playKitchenDing = () => {
+        try {
+            const audio = new Audio("https://actions.google.com/sounds/v1/alarms/dinner_bell_triangle.ogg");
+            audio.play().catch(e => console.error("Audio blocked:", e));
+        } catch (e) { console.error(e); }
+    };
+
     useEffect(() => {
         const fetchOrders = async () => {
             try {
@@ -29,21 +37,38 @@ const KitchenDashboard = ({ socket }) => {
     useEffect(() => {
         if (!socket) return;
 
-        socket.on('receive_order', (newOrder) => {
-            setOrders((prev) => [newOrder, ...prev]);
-        });
+        // Ensure connected
+        if (!socket.connected) socket.connect();
 
-        socket.on('order_updated', (updatedOrder) => {
+        const handleNewOrder = (newOrder) => {
+            setOrders((prev) => [newOrder, ...prev]);
+            
+            // Trigger Visual Toast (Orange for Kitchen)
+            toast(`NEW ORDER: Table ${newOrder.tableNumber}`, {
+                icon: '🚨',
+                duration: 6000,
+                style: { background: '#f97316', color: '#fff', fontWeight: 'bold' }
+            });
+
+            // Trigger Audio
+            playKitchenDing();
+        };
+
+        const handleOrderUpdated = (updatedOrder) => {
             setOrders((prev) => 
                 prev.map((order) => 
                     order._id === updatedOrder._id ? updatedOrder : order
                 )
             );
-        });
+        };
+
+        // Listen to 'new_order' (which we defined in orderController.js)
+        socket.on('new_order', handleNewOrder);
+        socket.on('order_updated', handleOrderUpdated);
 
         return () => {
-            socket.off('receive_order');
-            socket.off('order_updated');
+            socket.off('new_order', handleNewOrder);
+            socket.off('order_updated', handleOrderUpdated);
         };
     }, [socket]);
 
@@ -116,10 +141,10 @@ const KitchenDashboard = ({ socket }) => {
                 <StatusColumn 
                     title="Preparing" 
                     orders={columns.preparing} 
-                    borderColor="border-primary"
-                    headerBg="bg-primary"
+                    borderColor="border-orange-500"
+                    headerBg="bg-orange-500"
                     headerText="text-white"
-                    btnClass="bg-primary hover:opacity-90 text-white"
+                    btnClass="bg-orange-500 hover:bg-orange-600 text-white"
                     actionLabel="Mark Ready"
                     nextStatus="ready"
                     onAction={handleStatusUpdate}
@@ -130,10 +155,10 @@ const KitchenDashboard = ({ socket }) => {
                 <StatusColumn 
                     title="Ready for Pickup" 
                     orders={columns.ready} 
-                    borderColor="border-secondary"
-                    headerBg="bg-secondary"
+                    borderColor="border-green-500"
+                    headerBg="bg-green-500"
                     headerText="text-white"
-                    btnClass="bg-secondary hover:opacity-90 text-white"
+                    btnClass="bg-green-500 hover:bg-green-600 text-white"
                     actionLabel="Order Served"
                     nextStatus="served"
                     onAction={handleStatusUpdate}
