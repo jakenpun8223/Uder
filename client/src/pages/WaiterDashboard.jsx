@@ -46,10 +46,6 @@ const WaiterDashboard = () => {
                 return prev;
             });
 
-            // ALERT: If order is READY, show browser alert or toast
-            if (myTables.includes(updatedOrder.tableNumber) && updatedOrder.status === 'ready') {
-                alert(`✅ Order for Table ${updatedOrder.tableNumber} is READY!`);
-            }
         };
 
         socket.on('order_updated', handleUpdate);

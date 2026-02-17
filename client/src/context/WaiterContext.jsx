@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import { socket } from '../socket'; // Import the shared socket
 import useAuth from '../hooks/useAuth';
+import toast from 'react-hot-toast';
 
 const WaiterContext = createContext();
 
@@ -39,20 +40,20 @@ export const WaiterProvider = ({ children }) => {
             // Only notify if we are watching this table (or if we watch nothing, maybe show all? Let's stick to strict watching)
             if (myTables.includes(parseInt(data.tableNumber))) {
                 
-                // Add to notification list
-                const newNotif = {
-                    id: Date.now(),
-                    table: data.tableNumber,
-                    message: data.message || `Table ${data.tableNumber} needs help!`,
-                    type: 'alert',
-                    time: new Date().toLocaleTimeString()
-                };
-
-                setNotifications(prev => [newNotif, ...prev]);
+                const msg = `Table ${data.tableNumber} needs help!`;
+                
+                // A. Visual Toast (The smooth pop-up)
+                toast(msg, {
+                    icon: '👋', // Hand wave icon
+                    style: {
+                        borderRadius: '10px',
+                        background: '#333',
+                        color: '#fff',
+                    },
+                });
                 playNotificationSound();
 
-                // Play Sound (Optional)
-                // new Audio('/ping.mp3').play().catch(e => console.log(e));
+                addHistory(data.tableNumber, msg, 'alert');
             }
         };
 
@@ -60,15 +61,20 @@ export const WaiterProvider = ({ children }) => {
             // 1. Check if this order belongs to a table I am watching
             // 2. Check if the status is specifically 'ready'
             if (myTables.includes(order.tableNumber) && order.status === 'ready') {
-                const newNotif = {
-                    id: Date.now(),
-                    table: order.tableNumber,
-                    message: `Order for Table ${order.tableNumber} is Ready!`,
-                    type: 'success', // [NEW] Green type
-                    time: new Date().toLocaleTimeString()
-                };
-                setNotifications(prev => [newNotif, ...prev]);
+                const msg = `Table ${order.tableNumber} order is Ready!`;
+
+                // A. Visual Toast
+                toast.success(msg, {
+                    duration: 5000, // Stay a bit longer
+                    style: {
+                        border: '1px solid #4ade80',
+                        padding: '16px',
+                        color: '#1f2937',
+                    },
+                });
+
                 playNotificationSound(); // [NEW] Trigger sound
+                addHistory(order.tableNumber, msg, 'success');
             }
         };
 
@@ -94,6 +100,16 @@ export const WaiterProvider = ({ children }) => {
         }
     };
 
+    const addHistory = (table, message, type) => {
+        setNotifications(prev => [{
+            id: Date.now(),
+            table,
+            message,
+            type,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }, ...prev].slice(0, 10)); // Only keep last 10
+    };
+    
     return (
         <WaiterContext.Provider value={{ myTables, toggleTable, notifications, removeNotification }}>
             {children}
