@@ -12,6 +12,7 @@ const KitchenDashboard = ({ socket }) => {
         const fetchOrders = async () => {
             try {
                 const { data } = await axios.get('/orders');
+                console.log(data);
                 const activeOrders = data.filter(o => ['pending', 'preparing', 'ready'].includes(o.status));
                 setOrders(activeOrders);
             } catch (err) {
@@ -31,7 +32,7 @@ const KitchenDashboard = ({ socket }) => {
         if (!socket) return;
 
         socket.on('receive_order', (newOrder) => {
-            setOrders((prev) => [newOrder, ...prev]);
+            setOrders((prev) => [ ...prev, newOrder]);
         });
 
         socket.on('order_updated', (updatedOrder) => {

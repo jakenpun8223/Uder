@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import axios from '../api/axios';
-import { socket } from '../socket'; // Import socket
+import { socket } from '../socket'; 
 
 const TableManagement = () => {
     const [tables, setTables] = useState([]);
     
-    // Form state (Used for both Create and Edit)
-    const [formData, setFormData] = useState({ tableNumber: '', capacity: '' });
-    const [editingId, setEditingId] = useState(null); // If set, we are editing this ID
-    
+    // Form state
+    const [formData, setFormData] = useState({ 
+        tableNumber: '', 
+        capacity: '', 
+        status: 'available' // Added status
+    });
+    const [editingId, setEditingId] = useState(null); 
     const [message, setMessage] = useState('');
 
     const fetchTables = async () => {
@@ -21,15 +24,12 @@ const TableManagement = () => {
     useEffect(() => {
         fetchTables();
 
-        // --- REAL TIME LISTENERS ---
         socket.on('table_updated', (updatedTable) => {
             setTables(prev => prev.map(t => t._id === updatedTable._id ? updatedTable : t));
         });
-
         socket.on('table_added', (newTable) => {
             setTables(prev => [...prev, newTable].sort((a, b) => a.tableNumber - b.tableNumber));
         });
-
         socket.on('table_deleted', (deletedId) => {
             setTables(prev => prev.filter(t => t._id !== deletedId));
         });
@@ -45,19 +45,20 @@ const TableManagement = () => {
         e.preventDefault();
         try {
             if (editingId) {
-                // UPDATE MODE
+                // UPDATE
                 await axios.put(`/tables/${editingId}`, formData);
                 setMessage(`Table ${formData.tableNumber} updated!`);
                 setEditingId(null);
             } else {
-                // CREATE MODE
+                // CREATE
                 await axios.post('/tables', {
                     tableNumber: parseInt(formData.tableNumber),
                     capacity: parseInt(formData.capacity)
+                    // Default status is 'available'
                 });
                 setMessage(`Table ${formData.tableNumber} created!`);
             }
-            setFormData({ tableNumber: '', capacity: '' }); // Reset form
+            setFormData({ tableNumber: '', capacity: '', status: 'available' }); 
         } catch (err) {
             setMessage("Error: " + (err.response?.data?.message || err.message));
         }
@@ -65,20 +66,22 @@ const TableManagement = () => {
 
     const handleEdit = (table) => {
         setEditingId(table._id);
-        setFormData({ tableNumber: table.tableNumber, capacity: table.capacity });
+        setFormData({ 
+            tableNumber: table.tableNumber, 
+            capacity: table.capacity,
+            status: table.status // Load current status
+        });
         setMessage(`Editing Table ${table.tableNumber}...`);
     };
 
     const handleDelete = async (id) => {
         if(!window.confirm("Delete this table?")) return;
-        try {
-            await axios.delete(`/tables/${id}`);
-        } catch (err) { alert(err.message); }
+        try { await axios.delete(`/tables/${id}`); } catch (err) { alert(err.message); }
     };
 
     const cancelEdit = () => {
         setEditingId(null);
-        setFormData({ tableNumber: '', capacity: '' });
+        setFormData({ tableNumber: '', capacity: '', status: 'available' });
         setMessage('');
     };
 
@@ -88,7 +91,7 @@ const TableManagement = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
-                {/* 1. CONTROL PANEL (Create / Edit Form) */}
+                {/* 1. CONTROL PANEL */}
                 <div className="bg-white p-6 rounded shadow-md h-fit border-t-4 border-primary">
                     <h2 className="text-lg font-bold mb-4 border-b pb-2">
                         {editingId ? 'Edit Table' : 'Add New Table'}
@@ -117,8 +120,24 @@ const TableManagement = () => {
                             />
                         </div>
 
+                        {/* STATUS DROPDOWN (Only visible when editing) */}
+                        {editingId && (
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Status</label>
+                                <select 
+                                    value={formData.status}
+                                    onChange={e => setFormData({...formData, status: e.target.value})}
+                                    className="w-full border p-2 rounded focus:ring-2 focus:ring-primary outline-none bg-white"
+                                >
+                                    <option value="available">Available (Green)</option>
+                                    <option value="occupied">Occupied (Red)</option>
+                                    <option value="reserved">Reserved (Yellow)</option>
+                                </select>
+                            </div>
+                        )}
+
                         <button type="submit" className={`py-2 rounded font-bold text-white transition ${editingId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-primary hover:bg-orange-600'}`}>
-                            {editingId ? 'Update Table' : 'Add Table'}
+                            {editingId ? 'Save Changes' : 'Add Table'}
                         </button>
 
                         {editingId && (
@@ -129,7 +148,7 @@ const TableManagement = () => {
                     </form>
                 </div>
 
-                {/* 2. TABLE GRID (Clean View) */}
+                {/* 2. TABLE GRID */}
                 <div className="md:col-span-2 bg-white p-6 rounded shadow-md">
                     <h2 className="text-lg font-bold mb-4 border-b pb-2 flex justify-between">
                         <span>Floor Plan</span>
@@ -146,12 +165,12 @@ const TableManagement = () => {
                                 <span className="text-xs text-gray-500 font-medium">Capacity: {table.capacity}</span>
                                 
                                 <span className={`mt-2 px-2 py-0.5 text-[10px] rounded-full uppercase font-bold ${
-                                    table.status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                    table.status === 'available' ? 'bg-green-100 text-green-700' : 
+                                    table.status === 'occupied' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-800'
                                 }`}>
                                     {table.status}
                                 </span>
 
-                                {/* HOVER ACTIONS */}
                                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button onClick={() => handleEdit(table)} className="bg-white border rounded p-1 hover:text-blue-600 text-gray-400 shadow-sm" title="Edit">
                                         ✏️
@@ -163,7 +182,6 @@ const TableManagement = () => {
                             </div>
                         ))}
                     </div>
-                    {tables.length === 0 && <p className="text-gray-400 text-center py-10">No tables found.</p>}
                 </div>
             </div>
         </div>

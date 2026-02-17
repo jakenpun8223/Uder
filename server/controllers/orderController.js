@@ -2,7 +2,7 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import Table from '../models/Table.js';
 
-// [WAITER] create new order for table 
+// [WAITER] Create new order (Always creates a separate Ticket)
 export const createOrder = async (req,res) => {
     try{
         const { tableNumber, items } = req.body;
@@ -16,45 +16,14 @@ export const createOrder = async (req,res) => {
             return res.status(404).json({ message: `Table ${tableNumber} does not exist.` });
         }
 
-        // --- NEW LOGIC: APPEND IF OCCUPIED ---
-        if(table.status === 'occupied' && table.currentOrder){
-            // 1. Find the existing order
-            const existingOrder = await Order.findById(table.currentOrder);
-            
-            if(existingOrder) {
-                // 2. Add new items to it
-                for (const item of items){
-                    const productDoc = await Product.findOne({ 
-                        _id: item.product, 
-                        restaurant: req.user.restaurant 
-                    });
-
-                    if(productDoc){
-                        existingOrder.items.push({
-                            product: productDoc._id,
-                            quantity: item.quantity,
-                            name: productDoc.name,
-                            price: productDoc.price
-                        });
-                        existingOrder.totalAmount += productDoc.price * item.quantity;
-                    }
-                }
-                
-                await existingOrder.save();
-
-                // 3. Emit update
-                const io = req.app.get('socketio');
-                io.to(req.user.restaurant).emit('order_updated', existingOrder);
-
-                return res.status(200).json(existingOrder);
-            }
-            // If active order missing (data corruption), fall through to create new one
-        }
-        // -------------------------------------
+        // --- DELETED: The logic that appended to existing orders ---
+        // We now skip directly to creating a NEW order every time.
+        // -----------------------------------------------------------
 
         let totalAmount = 0;
         const finalItems = [];
 
+        // 1. Calculate totals and format items
         for (const item of items){
             const productDoc = await Product.findOne({ 
                 _id: item.product, 
@@ -72,38 +41,45 @@ export const createOrder = async (req,res) => {
             }
         }
 
+        // 2. Always create a NEW Order document
         const newOrder = new Order({
             tableNumber,
             items: finalItems,
             totalAmount,
-            restaurant: req.user.restaurant
+            restaurant: req.user.restaurant,
+            status: 'pending' // Default status
         });
         await newOrder.save();
 
+        // 3. Emit 'new_order' so Kitchen sees a FRESH ticket
         const io = req.app.get('socketio');
-        io.to(req.user.restaurant).emit('new_order', newOrder); 
+        // Ensure room ID is a string
+        const room = req.user.restaurant.toString();
+        io.to(room).emit('new_order', newOrder); 
 
+        // 4. Update Table Status
+        // We set it to occupied. We update currentOrder to the LATEST ticket.
         table.status = 'occupied';
-        table.currentOrder = newOrder._id;
+        table.currentOrder = newOrder._id; 
         await table.save();
         
         res.status(201).json(newOrder);
     }
     catch(error){
+        console.error(error);
         res.status(500).json({ message: error.message });
     }
 }
 
-// [WAITER] Add items to an existing order (e.g. Table wants desert)
+// ... (Keep existing addItemsToOrder, getAllOrders, updateOrderStatus) ...
 export const addItemsToOrder = async (req,res) => {
+    // ... existing code ...
     try{
-        const { id } = req.params; // Order ID
-        const { items } = req.body; // New items to add
-
+        const { id } = req.params;
+        const { items } = req.body;
         const order = await Order.findOne({ _id: id, restaurant: req.user.restaurant });
         if(!order) return res.status(404).json({ message: "Order not found" });
 
-        // Calculate and push new items
         for (const item of items){
             const productDoc = await Product.findOne({ _id: item.product, restaurant: req.user.restaurant });
             if(productDoc){
@@ -116,33 +92,21 @@ export const addItemsToOrder = async (req,res) => {
                 order.totalAmount += productDoc.price * item.quantity;
             }
         }
-
-        order.version = (order.version || 1) + 1; // Track changes
+        order.version = (order.version || 1) + 1;
         await order.save();
-
         res.json(order);
-    }
-    catch(error){
-        res.status(500).json({ message: error.message });
-    }
+    } catch(error){ res.status(500).json({ message: error.message }); }
 };
 
-// [KITCHEN / WAITER] Get all orders
 export const getAllOrders = async (req,res) => {
     try{
-        // Return all orders sorted by newest first
-        // Populate 'product' to get details like allergies/category
         const orders = await Order.find({ restaurant: req.user.restaurant })
-            .sort({ createdAt: -1 })
+            .sort({ createdAt: 1 })
             .populate('items.product');
         res.json(orders);
-    }
-    catch(error){
-        res.status(500).json({ message: error.message });
-    }
+    } catch(error){ res.status(500).json({ message: error.message }); }
 };
 
-// [CHEF / CASHIER] Update status (Pending -> Preparing -> Served -> Paid)
 export const updateOrderStatus = async (req, res) => {
     try {
         const { status } = req.body;
@@ -150,17 +114,14 @@ export const updateOrderStatus = async (req, res) => {
             { _id: req.params.id, restaurant: req.user.restaurant },
             { status },
             { new: true }
-        ).populate('items.product'); // Populate so the frontend gets full product details back
+        ).populate('items.product');
 
         if (!order) return res.status(404).json({ message: "Order not found" });
 
-        // --- NEW: EMIT UPDATE ---
         const io = req.app.get('socketio');
-        io.to(req.user.restaurant).emit('order_updated', order);
-        // ------------------------
+        const room = req.user.restaurant.toString();
+        io.to(room).emit('order_updated', order);
 
         res.json(order);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+    } catch (error) { res.status(500).json({ message: error.message }); }
 };
