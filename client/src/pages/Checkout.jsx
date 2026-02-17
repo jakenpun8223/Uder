@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import axios from '../api/axios';
 
 const Checkout = () => {
     const { cart, cartTotal, removeFromCart, clearCart } = useCart();
-    const [tableNumber, setTableNumber] = useState('');
+    const [searchParams] = useSearchParams(); // Hook to read URL
+    
+    // Check if the URL has ?table=5
+    const urlTable = searchParams.get('table');
+    
+    // Pre-fill the state if urlTable exists
+    const [tableNumber, setTableNumber] = useState(urlTable || '');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();

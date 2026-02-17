@@ -157,7 +157,11 @@ const Menu = () => {
                 </div>
             )}
             
-            {isStaff ? <FloatingCart /> : <CallWaiter />}
+            {isStaff ? (
+                <FloatingCart tableNumber={searchParams.get('table')} /> 
+            ) : (
+                <CallWaiter />
+            )}
         </div>
     );
 };
