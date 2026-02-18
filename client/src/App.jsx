@@ -23,24 +23,8 @@ import Checkout from "./pages/Checkout";
 import StaffManagement from "./pages/StaffManagement";
 import WaiterDashboard from "./pages/WaiterDashboard";
 import ScanSession from './pages/ScanSession';
-// 1. IMPORT THE NEW PAGE HERE
-import TableManagement from "./pages/TableManagement";
-import { socket } from "./socket";
-import { CartProvider } from './context/CartContext';
-import { WaiterProvider } from './context/WaiterContext';
-import Navbar from './components/Navbar';
-import Login from './pages/Login'; 
-import Register from './pages/Register';
-import KitchenDashboard from './pages/KitchenDashboard';
-import MenuManager from './pages/MenuManager';
-import Menu from './pages/Menu';
-import Checkout from './pages/Checkout';
-import StaffManagement from './pages/StaffManagement';
 import TableManagement from './pages/TableManagement'; 
-import WaiterDashboard from './pages/WaiterDashboard'; 
-
-// Import Socket
-import { socket } from './socket';
+import { socket } from "./socket";
 
 // Security Guard
 const ProtectedRoute = ({ allowedRoles }) => {
