@@ -26,6 +26,21 @@ import ScanSession from './pages/ScanSession';
 // 1. IMPORT THE NEW PAGE HERE
 import TableManagement from "./pages/TableManagement";
 import { socket } from "./socket";
+import { CartProvider } from './context/CartContext';
+import { WaiterProvider } from './context/WaiterContext';
+import Navbar from './components/Navbar';
+import Login from './pages/Login'; 
+import Register from './pages/Register';
+import KitchenDashboard from './pages/KitchenDashboard';
+import MenuManager from './pages/MenuManager';
+import Menu from './pages/Menu';
+import Checkout from './pages/Checkout';
+import StaffManagement from './pages/StaffManagement';
+import TableManagement from './pages/TableManagement'; 
+import WaiterDashboard from './pages/WaiterDashboard'; 
+
+// Import Socket
+import { socket } from './socket';
 
 // Security Guard
 const ProtectedRoute = ({ allowedRoles }) => {
@@ -38,10 +53,27 @@ const ProtectedRoute = ({ allowedRoles }) => {
   return <Outlet />;
 };
 
+// Wrapper component to handle Socket Join
+const SocketManager = () => {
+    const { user } = useAuth();
+
+    useEffect(() => {
+        // Only try to join if user exists and has a restaurant ID
+        if (user && user.restaurant && socket) {
+            console.log("Joining restaurant room:", user.restaurant);
+            socket.emit('join_restaurant', user.restaurant);
+        }
+    }, [user]); // Only re-run if user changes
+
+    return null; // This component renders nothing, just handles logic
+};
+
 function App() {
   useEffect(() => {
-    socket.on("connect", () => console.log("Connected:", socket.id));
-    return () => socket.off("connect");
+    if(socket) {
+        socket.on('connect', () => console.log('Connected to server:', socket.id));
+        return () => socket.off('connect');
+    }
   }, []);
 
   return (
@@ -49,6 +81,9 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <WaiterProvider>
+            {/* Active Socket Manager inside Auth Context */}
+            <SocketManager />
+            
             <Navbar />
             <div className="container mx-auto p-4">
               <Routes>
@@ -57,15 +92,10 @@ function App() {
                 <Route path="/menu" element={<Menu />} />
                 <Route path="/scan/:restaurantId/:tableNumber" element={<ScanSession />} />
 
-                <Route
-                  element={
-                    <ProtectedRoute
-                      allowedRoles={["kitchen", "admin", "staff"]}
-                    />
-                  }
-                >
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/waiter" element={<WaiterDashboard />} />
+                {/* Shared Routes */}
+                <Route element={<ProtectedRoute allowedRoles={['kitchen', 'admin', 'staff']} />}>
+                    <Route path='/checkout' element={<Checkout />} />
+                    <Route path='/waiter' element={<WaiterDashboard />} />
                 </Route>
 
                 <Route
@@ -80,11 +110,13 @@ function App() {
                   <Route path="/manage-menu" element={<MenuManager />} />
                 </Route>
 
-                {/* --- ADMIN ONLY --- */}
-                <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-                  <Route path="/staff" element={<StaffManagement />} />
-                  {/* 2. ADD THE ROUTE HERE */}
-                  <Route path="/manage-tables" element={<TableManagement />} />
+                {/* Admin Only */}
+                <Route element={<ProtectedRoute allowedRoles={['admin', 'staff']} />}>
+                    <Route path="/manage-tables" element={<TableManagement />} />
+                </Route>
+                
+                <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                    <Route path="/staff" element={<StaffManagement />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/menu" />} />

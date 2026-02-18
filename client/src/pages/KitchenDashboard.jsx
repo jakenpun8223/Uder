@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from '../api/axios';
 import toast from 'react-hot-toast'; // 1. Import Toast
+import { socket } from '../socket'; // Use shared socket
 
 const KitchenDashboard = ({ socket }) => {
     const [orders, setOrders] = useState([]);
@@ -19,6 +20,7 @@ const KitchenDashboard = ({ socket }) => {
         const fetchOrders = async () => {
             try {
                 const { data } = await axios.get('/orders');
+                console.log(data);
                 const activeOrders = data.filter(o => ['pending', 'preparing', 'ready'].includes(o.status));
                 setOrders(activeOrders);
             } catch (err) {
