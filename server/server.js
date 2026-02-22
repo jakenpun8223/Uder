@@ -61,24 +61,24 @@ const io = new Server(server, {
 });
 
 // [SECURE] Socket Middleware: Verify JWT from Cookie
+// [SECURE] Socket Middleware: Verify JWT from Cookie (Optional for Guests)
 io.use((socket, next) => {
-    try {
-        // Parse cookies manually from the handshake headers
-        const cookieString = socket.handshake.headers.cookie;
-        if (!cookieString) return next(new Error("Authentication error: No cookies"));
+  try {
+      const cookieString = socket.handshake.headers.cookie;
+      // If no cookie, just let them connect as a Guest (don't throw error)
+      if (!cookieString) return next(); 
 
-        // Extract 'jwt' cookie
-        const token = cookieString.split('; ').find(row => row.startsWith('jwt='))?.split('=')[1];
-        
-        if (!token) return next(new Error("Authentication error: No token"));
+      const token = cookieString.split('; ').find(row => row.startsWith('jwt='))?.split('=')[1];
+      if (!token) return next(); // Let them connect as Guest
 
-        // Verify Token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        socket.user = decoded; // Attach user data (id, role, restaurant) to socket
-        next();
-    } catch (err) {
-        next(new Error("Authentication error"));
-    }
+      // Verify Token for Staff/Admin
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      socket.user = decoded; 
+      next();
+  } catch (err) {
+      // If token is expired/invalid, let them connect as a Guest instead of disconnecting them
+      next(); 
+  }
 });
 
 app.set('socketio', io); // Allows routes to access 'io'
