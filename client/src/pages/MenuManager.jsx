@@ -129,7 +129,7 @@ const MenuManager = () => {
                             {ALLERGENS.map(a => (
                                 <label key={a} className="flex items-center space-x-1 rtl:space-x-reverse cursor-pointer bg-gray-50 px-2 py-1 rounded border text-sm">
                                     <input type="checkbox" checked={formData.allergens.includes(a)} onChange={() => handleCheckbox(a)} className="accent-primary" />
-                                    <span className="capitalize">{a}</span>
+                                    <span className="capitalize">{t('allergen_' + a)}</span>
                                 </label>
                             ))}
                         </div>

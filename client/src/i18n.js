@@ -32,12 +32,20 @@ const resources = {
       
       "staff_login": "Staff Login", "sign_in": "Sign In", "dont_have_account": "Don't have an account?", "register_now": "Register now!",
 
-      // --- NEW: MENU MANAGER TRANSLATIONS ---
       "menu_manager": "Menu Manager", "edit_dish": "Edit Dish", "add_new_dish": "Add New Dish",
       "dish_name": "Dish Name", "price_ils": "Price (₪)", "description": "Description", 
       "ingredients_comma": "Ingredients (comma separated)", "allergens_label": "Allergens:",
       "update_dish": "Update Dish", "add_to_menu": "Add to Menu", "cancel": "Cancel",
-      "available_caps": "AVAILABLE", "sold_out_caps": "SOLD OUT", "delete_confirm": "Delete this dish completely?"
+      "available_caps": "AVAILABLE", "sold_out_caps": "SOLD OUT", "delete_confirm": "Delete this dish completely?",
+
+      // --- NEW: NAVBAR TRANSLATIONS ---
+      "nav_menu": "Menu", "nav_kitchen": "Kitchen", "nav_menu_mgr": "Menu Mgr", "nav_my_station": "My Station",
+      "nav_tables": "Tables", "nav_staff": "Staff", "nav_login": "Login", "nav_logout": "Logout",
+
+      // --- NEW: ALLERGEN TRANSLATIONS ---
+      "allergen_lactose": "Lactose", "allergen_gluten": "Gluten", "allergen_shellfish": "Shellfish", 
+      "allergen_peanut": "Peanut", "allergen_nuts": "Nuts", "allergen_soy": "Soy", 
+      "allergen_eggs": "Eggs", "allergen_fish": "Fish", "allergen_sesame": "Sesame"
     }
   },
   he: {
@@ -69,12 +77,20 @@ const resources = {
       
       "staff_login": "התחברות צוות", "sign_in": "היכנס", "dont_have_account": "אין לך חשבון?", "register_now": "הירשם עכשיו!",
 
-      // --- NEW: MENU MANAGER TRANSLATIONS ---
       "menu_manager": "ניהול תפריט", "edit_dish": "ערוך מנה", "add_new_dish": "הוסף מנה חדשה",
       "dish_name": "שם המנה", "price_ils": "מחיר (₪)", "description": "תיאור", 
       "ingredients_comma": "מרכיבים (מופרדים בפסיק)", "allergens_label": "אלרגנים:",
       "update_dish": "עדכן מנה", "add_to_menu": "הוסף לתפריט", "cancel": "ביטול",
-      "available_caps": "זמין", "sold_out_caps": "אזל", "delete_confirm": "למחוק את המנה הזו לחלוטין?"
+      "available_caps": "זמין", "sold_out_caps": "אזל", "delete_confirm": "למחוק את המנה הזו לחלוטין?",
+
+      // --- NEW: NAVBAR TRANSLATIONS ---
+      "nav_menu": "תפריט", "nav_kitchen": "מטבח", "nav_menu_mgr": "ניהול תפריט", "nav_my_station": "העמדה שלי",
+      "nav_tables": "שולחנות", "nav_staff": "צוות", "nav_login": "התחבר", "nav_logout": "התנתק",
+
+      // --- NEW: ALLERGEN TRANSLATIONS ---
+      "allergen_lactose": "לקטוז", "allergen_gluten": "גלוטן", "allergen_shellfish": "פירות ים", 
+      "allergen_peanut": "בוטנים", "allergen_nuts": "אגוזים", "allergen_soy": "סויה", 
+      "allergen_eggs": "ביצים", "allergen_fish": "דגים", "allergen_sesame": "שומשום"
     }
   },
   ru: {
@@ -106,12 +122,20 @@ const resources = {
       
       "staff_login": "Вход для персонала", "sign_in": "Войти", "dont_have_account": "Нет аккаунта?", "register_now": "Зарегистрироваться!",
 
-      // --- NEW: MENU MANAGER TRANSLATIONS ---
       "menu_manager": "Управление Меню", "edit_dish": "Изменить Блюдо", "add_new_dish": "Добавить Блюдо",
       "dish_name": "Название Блюда", "price_ils": "Цена (₪)", "description": "Описание", 
       "ingredients_comma": "Ингредиенты (через запятую)", "allergens_label": "Аллергены:",
       "update_dish": "Обновить Блюдо", "add_to_menu": "Добавить в Меню", "cancel": "Отмена",
-      "available_caps": "ДОСТУПНО", "sold_out_caps": "РАСПРОДАНО", "delete_confirm": "Удалить это блюдо полностью?"
+      "available_caps": "ДОСТУПНО", "sold_out_caps": "РАСПРОДАНО", "delete_confirm": "Удалить это блюдо полностью?",
+
+      // --- NEW: NAVBAR TRANSLATIONS ---
+      "nav_menu": "Меню", "nav_kitchen": "Кухня", "nav_menu_mgr": "Упр. Меню", "nav_my_station": "Моя станция",
+      "nav_tables": "Столы", "nav_staff": "Персонал", "nav_login": "Войти", "nav_logout": "Выйти",
+
+      // --- NEW: ALLERGEN TRANSLATIONS ---
+      "allergen_lactose": "Лактоза", "allergen_gluten": "Глютен", "allergen_shellfish": "Моллюски", 
+      "allergen_peanut": "Арахис", "allergen_nuts": "Орехи", "allergen_soy": "Соя", 
+      "allergen_eggs": "Яйца", "allergen_fish": "Рыба", "allergen_sesame": "Кунжут"
     }
   }
 };
