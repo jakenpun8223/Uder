@@ -3,6 +3,7 @@ import axios from '../api/axios';
 import useAuth from '../hooks/useAuth';
 import { socket } from '../socket';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast'; // IMPORT TOAST
 
 const CATEGORIES = ['Main', 'Sushi', 'Drinks', 'Dessert', 'Starters'];
 const ALLERGENS = ['lactose', 'gluten', 'shellfish', 'peanut', 'nuts', 'soy', 'eggs', 'fish', 'sesame'];
@@ -22,7 +23,9 @@ const MenuManager = () => {
         try {
             const { data } = await axios.get('/products/all');
             setProducts(data);
-        } catch (err) { console.error(err); } 
+        } catch (err) { 
+            toast.error("Error loading products"); 
+        } 
         finally { setLoading(false); }
     };
 
@@ -68,13 +71,17 @@ const MenuManager = () => {
         try {
             if (editingId) {
                 await axios.put(`/products/${editingId}`, payload);
+                toast.success(t('update_dish') + "!");
             } else {
                 await axios.post('/products', payload);
+                toast.success(t('add_to_menu') + "!");
             }
             setEditingId(null);
             setFormData({ name: '', price: '', category: 'Main', description: '', ingredients: '', allergens: [] });
             fetchProducts();
-        } catch (err) { alert(err.response?.data?.message || "Error saving"); }
+        } catch (err) { 
+            toast.error(err.response?.data?.message || "Error saving"); 
+        }
     };
 
     const handleEdit = (product) => {
@@ -86,16 +93,24 @@ const MenuManager = () => {
         window.scrollTo(0,0);
     };
 
+    // REMOVED WINDOW.CONFIRM AND ADDED TOAST
     const handleDelete = async (id) => {
-        if(!window.confirm(t('delete_confirm'))) return;
-        try { await axios.delete(`/products/${id}`); fetchProducts(); } catch (err) { alert("Error deleting"); }
+        try { 
+            await axios.delete(`/products/${id}`); 
+            toast.success(t('delete') + "!");
+            fetchProducts(); 
+        } catch (err) { 
+            toast.error("Error deleting"); 
+        }
     };
 
     const handleToggle = async (id) => {
         try {
             await axios.patch(`/products/${id}/toggle`);
             setProducts(prev => prev.map(p => p._id === id ? { ...p, isAvailable: !p.isAvailable } : p));
-        } catch (err) { alert("Error"); }
+        } catch (err) { 
+            toast.error("Error updating status"); 
+        }
     };
 
     if (loading) return <div className="p-10 text-center">{t('loading')}</div>;
@@ -114,7 +129,6 @@ const MenuManager = () => {
                         <div className="flex gap-2 w-full md:w-auto">
                             <input name="price" type="number" value={formData.price} onChange={handleChange} placeholder={t('price_ils')} className="border p-2 rounded w-full md:w-32" required />
                             <select name="category" value={formData.category} onChange={handleChange} className="border p-2 rounded w-full md:w-auto rtl:bg-right">
-                                {/* Translates the dropdown items based on the dictionary! */}
                                 {CATEGORIES.map(c => <option key={c} value={c}>{t('cat_' + c.toLowerCase())}</option>)}
                             </select>
                         </div>

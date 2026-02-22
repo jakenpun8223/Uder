@@ -2,6 +2,7 @@ import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { X, ShoppingBag } from 'lucide-react';
+import toast from 'react-hot-toast'; // Import toast
 
 const FloatingCart = ({ tableNumber }) => {
     const { t } = useTranslation();
@@ -13,8 +14,12 @@ const FloatingCart = ({ tableNumber }) => {
 
     return (
         <div className="fixed bottom-4 md:bottom-6 left-0 right-0 px-4 flex justify-center z-50">
+            {/* REMOVED WINDOW.CONFIRM */}
             <button 
-                onClick={() => { if(window.confirm(t('clear_cart'))) clearCart(); }}
+                onClick={() => { 
+                    clearCart(); 
+                    toast.success(t('clear_cart') || "Cart cleared"); 
+                }}
                 className="bg-white text-red-500 shadow-xl rounded-full p-3 h-14 w-14 flex items-center justify-center hover:bg-red-50 transition border border-red-100 mx-2"
             >
                 <X size={24} />

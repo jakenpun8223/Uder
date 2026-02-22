@@ -4,6 +4,7 @@ import { socket } from '../socket';
 import useAuth from '../hooks/useAuth'; 
 import { QRCodeSVG } from 'qrcode.react'; 
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast'; // IMPORT TOAST
 
 const TableManagement = () => {
     const { t } = useTranslation();
@@ -12,13 +13,14 @@ const TableManagement = () => {
     const [loading, setLoading] = useState(true); 
     const [formData, setFormData] = useState({ tableNumber: '', capacity: '', status: 'available' });
     const [editingId, setEditingId] = useState(null); 
-    const [message, setMessage] = useState('');
 
     const fetchTables = async () => {
         try {
             const res = await axios.get('/tables');
             setTables(res.data.sort((a, b) => a.tableNumber - b.tableNumber));
-        } catch (err) { setMessage("Failed to load tables."); } 
+        } catch (err) { 
+            toast.error("Failed to load tables."); 
+        } 
         finally { setLoading(false); }
     };
 
@@ -35,12 +37,16 @@ const TableManagement = () => {
         try {
             if (editingId) {
                 await axios.put(`/tables/${editingId}`, formData);
+                toast.success(t('save_changes') + "!");
                 setEditingId(null);
             } else {
                 await axios.post('/tables', { tableNumber: parseInt(formData.tableNumber), capacity: parseInt(formData.capacity) });
+                toast.success(t('add_table') + "!");
             }
             setFormData({ tableNumber: '', capacity: '', status: 'available' }); 
-        } catch (err) { setMessage("Error: " + (err.response?.data?.message || err.message)); }
+        } catch (err) { 
+            toast.error("Error: " + (err.response?.data?.message || err.message)); 
+        }
     };
 
     const handleEdit = (table) => {
@@ -48,9 +54,14 @@ const TableManagement = () => {
         setFormData({ tableNumber: table.tableNumber, capacity: table.capacity, status: table.status });
     };
 
+    // REMOVED WINDOW.CONFIRM AND ADDED TOAST
     const handleDelete = async (id) => {
-        if(!window.confirm("Delete this table?")) return;
-        try { await axios.delete(`/tables/${id}`); } catch (err) { alert(err.message); }
+        try { 
+            await axios.delete(`/tables/${id}`); 
+            toast.success(t('delete') + "!");
+        } catch (err) { 
+            toast.error(err.message); 
+        }
     };
 
     if (loading) return <div className="p-10 text-center">{t('loading')}</div>;
@@ -66,7 +77,6 @@ const TableManagement = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded shadow-md h-fit border-t-4 border-primary">
                     <h2 className="text-lg font-bold mb-4 border-b pb-2">{editingId ? t('edit_table') : t('add_new_table')}</h2>
-                    {message && <div className="bg-blue-50 text-blue-800 p-2 text-sm rounded mb-4">{message}</div>}
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1">{t('table_number')}</label>
@@ -103,7 +113,15 @@ const TableManagement = () => {
                                     <span className="text-2xl font-black text-gray-700">{t('table_number')} {table.tableNumber}</span>
                                     <span className="text-xs text-gray-500 font-medium mt-1">{t('capacity')}: {table.capacity}</span>
                                     <span className={`mt-2 px-3 py-1 text-xs rounded-full uppercase font-bold ${table.status === 'available' ? 'bg-green-100 text-green-700' : table.status === 'occupied' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-800'}`}>{table.status}</span>
-                                    <div className="bg-white p-2 border-2 border-gray-100 rounded-lg shadow-sm mt-4 mb-2"><QRCodeSVG value={scanUrl} size={120} level={"H"} /></div>
+                                    
+                                    <div className="bg-white p-2 border-2 border-gray-100 rounded-lg shadow-sm mt-4 mb-2">
+                                        <QRCodeSVG value={scanUrl} size={120} level={"H"} />
+                                    </div>
+                                    
+                                    <a href={scanUrl} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-500 hover:text-blue-700 hover:underline break-all mt-1 px-2 w-full leading-tight" title={scanUrl}>
+                                        {scanUrl}
+                                    </a>
+
                                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button onClick={() => handleEdit(table)} className="bg-white border rounded p-1 hover:text-blue-600 text-gray-400 shadow-sm" title={t('edit')}>✏️</button>
                                         <button onClick={() => handleDelete(table._id)} className="bg-white border rounded p-1 hover:text-red-600 text-gray-400 shadow-sm" title={t('delete')}>🗑️</button>
