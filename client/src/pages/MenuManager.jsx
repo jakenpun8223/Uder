@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from '../api/axios';
 import useAuth from '../hooks/useAuth';
+import { socket } from '../socket';
 
 const CATEGORIES = ['Main', 'Sushi', 'Drinks', 'Dessert', 'Starters'];
 const ALLERGENS = ['lactose', 'gluten', 'shellfish', 'peanut', 'nuts', 'soy', 'eggs', 'fish', 'sesame'];
@@ -35,6 +36,32 @@ const MenuManager = () => {
 
     useEffect(() => {
         fetchProducts();
+
+        // --- NEW: Real-Time Listeners for the Manager ---
+        const handleUpdate = (updatedProduct) => {
+            setProducts(prev => {
+                // Check if it exists in the manager's list
+                const exists = prev.find(p => p._id === updatedProduct._id);
+                if (exists) {
+                    return prev.map(p => p._id === updatedProduct._id ? updatedProduct : p);
+                }
+                // If it's a completely new product created by someone else
+                return [...prev, updatedProduct];
+            });
+        };
+
+        const handleDelete = (deletedId) => {
+            setProducts(prev => prev.filter(p => p._id !== deletedId));
+        };
+
+        socket.on('menu_updated', handleUpdate);
+        socket.on('menu_deleted', handleDelete);
+
+        return () => {
+            socket.off('menu_updated', handleUpdate);
+            socket.off('menu_deleted', handleDelete);
+        };
+        
     }, []);
 
     // Handle Form Input

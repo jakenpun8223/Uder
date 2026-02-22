@@ -58,6 +58,10 @@ router.put('/:id', protect, authorize('admin', 'kitchen'), async (req, res) => {
 
         if(!product) return res.status(404).json({ message: "Product not found" });
 
+        // --- NEW: Emit Update to Customers in Real-Time ---
+        const io = req.app.get('socketio');
+        io.to(product.restaurant.toString()).emit('menu_updated', product);
+
         res.json(product);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -71,6 +75,10 @@ router.delete('/:id', protect, authorize('admin', 'kitchen'), async (req, res) =
         const product = await Product.findByIdAndDelete(req.params.id);
 
         if(!product) return res.status(404).json({ message: "Product not found" });
+
+        // --- NEW: Emit Deletion to Customers in Real-Time ---
+        const io = req.app.get('socketio');
+        io.to(product.restaurant.toString()).emit('menu_deleted', req.params.id);
 
         res.json({ message: "Product removed successfully" });
     } catch (error) {
@@ -92,10 +100,8 @@ router.patch('/:id/toggle', protect, authorize('admin', 'kitchen'), async (req,r
         product.isAvailable = !product.isAvailable;
         await product.save();
         
-        // 1. Get the socket instance
         const io = req.app.get('socketio');
-        // 2. Send the update to everyone
-        io.emit('menu_updated', product);
+        io.to(product.restaurant.toString()).emit('menu_updated', product);
         
         res.json(product);
     } catch(error) {
