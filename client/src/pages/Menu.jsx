@@ -81,8 +81,13 @@ const Menu = () => {
     useEffect(() => {
         if (!activeRestaurantId) return;
 
+        // 1. FORCE GUESTS TO JOIN THE ROOM (Critical for customers to receive updates)
+        socket.emit('join_restaurant', String(activeRestaurantId));
+
         const handleMenuUpdate = (updatedProduct) => {
-            if (updatedProduct.restaurant !== activeRestaurantId) return;
+            // Force string comparison just in case
+            if (String(updatedProduct.restaurant) !== String(activeRestaurantId)) return;
+            
             setProducts((prev) => {
                 if (updatedProduct.isAvailable) {
                     const exists = prev.find(p => p._id === updatedProduct._id);

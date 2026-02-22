@@ -39,17 +39,21 @@ const ProtectedRoute = ({ allowedRoles }) => {
 
 // Wrapper component to handle Socket Join
 const SocketManager = () => {
-    const { user } = useAuth();
+  const { user } = useAuth();
 
-    useEffect(() => {
-        // Only try to join if user exists and has a restaurant ID
-        if (user && user.restaurant && socket) {
-            console.log("Joining restaurant room:", user.restaurant);
-            socket.emit('join_restaurant', user.restaurant);
-        }
-    }, [user]); // Only re-run if user changes
+  useEffect(() => {
+      // Ensure the ID is a clean string to match the server broadcast
+      if (user && user.restaurant && socket) {
+          const roomStr = typeof user.restaurant === 'object' 
+              ? String(user.restaurant._id || user.restaurant) 
+              : String(user.restaurant);
+              
+          console.log("Joining staff restaurant room:", roomStr);
+          socket.emit('join_restaurant', roomStr);
+      }
+  }, [user]); 
 
-    return null; // This component renders nothing, just handles logic
+  return null;
 };
 
 function App() {
