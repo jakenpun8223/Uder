@@ -90,6 +90,7 @@ router.delete('/:id', protect, authorize('admin', 'kitchen'), async (req, res) =
 // Existing logic allows Chef to 86 (mark out) items immediately
 router.patch('/:id/toggle', protect, authorize('admin', 'kitchen'), async (req,res) => {
     try {
+        // 1. Find the product to get its current status
         const product = await Product.findOne({ 
             _id: req.params.id, 
             restaurant: req.user.restaurant 
@@ -97,13 +98,19 @@ router.patch('/:id/toggle', protect, authorize('admin', 'kitchen'), async (req,r
         
         if(!product) return res.status(404).json({ message: "Product not found" });
 
-        product.isAvailable = !product.isAvailable;
-        await product.save();
+        // 2. Safely update ONLY the isAvailable field directly in the DB
+        // This bypasses full document validation in case old products have missing ingredients
+        const updatedProduct = await Product.findByIdAndUpdate(
+            req.params.id,
+            { isAvailable: !product.isAvailable },
+            { new: true } // Return the updated document
+        );
         
+        // 3. Emit the confirmed update to the room
         const io = req.app.get('socketio');
-        io.to(product.restaurant.toString()).emit('menu_updated', product);
+        io.to(updatedProduct.restaurant.toString()).emit('menu_updated', updatedProduct);
         
-        res.json(product);
+        res.json(updatedProduct);
     } catch(error) {
         res.status(400).json({ message: error.message });
     }

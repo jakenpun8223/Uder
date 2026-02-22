@@ -106,10 +106,15 @@ const MenuManager = () => {
 
     const handleToggle = async (id) => {
         try {
-            await axios.patch(`/products/${id}/toggle`);
-            setProducts(prev => prev.map(p => p._id === id ? { ...p, isAvailable: !p.isAvailable } : p));
+            // Wait for the exact response from the database
+            const { data } = await axios.patch(`/products/${id}/toggle`);
+            
+            // Update the screen using the confirmed Database object
+            setProducts(prev => prev.map(p => p._id === id ? data : p));
+            toast.success("Status updated!");
+            
         } catch (err) { 
-            toast.error("Error updating status"); 
+            toast.error(err.response?.data?.message || "Error updating status"); 
         }
     };
 
