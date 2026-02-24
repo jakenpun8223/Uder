@@ -8,7 +8,7 @@ import { Globe, Menu as MenuIcon, X } from 'lucide-react';
 const Navbar = () => {
     const { user, logout } = useAuth();
     const { restaurantId } = useCart(); 
-    const { t, i18n } = useTranslation(); // IMPORTANT: Import translation hook
+    const { t, i18n } = useTranslation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const menuLink = restaurantId ? `/menu?restaurant=${restaurantId}` : '/menu';
@@ -64,9 +64,12 @@ const Navbar = () => {
                             </div>
                         </>
                     ) : (
-                        <div className="flex gap-4">
-                            <Link to="/login" className="px-4 py-2 hover:text-primary">{t('nav_login')}</Link>
-                        </div>
+                        // Hide login if restaurantId exists (meaning it's a customer scanning a table)
+                        !restaurantId && (
+                            <div className="flex gap-4">
+                                <Link to="/login" className="px-4 py-2 hover:text-primary">{t('nav_login')}</Link>
+                            </div>
+                        )
                     )}
 
                     {/* Language Selector Desktop */}
@@ -122,7 +125,10 @@ const Navbar = () => {
                             </div>
                         </>
                     ) : (
-                        <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-primary">{t('nav_login')}</Link>
+                        // Hide login if restaurantId exists (meaning it's a customer scanning a table)
+                        !restaurantId && (
+                            <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-primary">{t('nav_login')}</Link>
+                        )
                     )}
                 </div>
             )}

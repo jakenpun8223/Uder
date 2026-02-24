@@ -16,7 +16,7 @@ const MenuManager = () => {
     const [editingId, setEditingId] = useState(null);
 
     const [formData, setFormData] = useState({
-        name: '', price: '', category: 'Main', description: '', ingredients: '', allergens: []
+        name: '', price: '', category: 'Main', description: '', ingredients: '', image: '', allergens: []
     });
 
     const fetchProducts = async () => {
@@ -64,6 +64,50 @@ const MenuManager = () => {
         });
     };
 
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Create an image element to read the file
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+
+        img.onload = () => {
+            // Create a canvas element
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Optional: Resize the image if it's too huge (e.g., max width 800px)
+            const MAX_WIDTH = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > MAX_WIDTH) {
+                height = Math.round((height * MAX_WIDTH) / width);
+                width = MAX_WIDTH;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Draw the image onto the canvas
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // MAGIC HAPPENS HERE: Convert to WebP format with 80% quality (0.8)
+            const webpBase64 = canvas.toDataURL('image/webp', 0.8);
+
+            // Clean up the object URL to save memory
+            URL.revokeObjectURL(img.src);
+
+            // Save the tiny WebP string to your form state!
+            setFormData(prev => ({ ...prev, image: webpBase64 }));
+        };
+        
+        img.onerror = () => {
+            toast.error("Error reading the image file.");
+        };
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         const payload = { ...formData, ingredients: formData.ingredients.split(',').map(i => i.trim()).filter(i => i) };
@@ -88,7 +132,10 @@ const MenuManager = () => {
         setEditingId(product._id);
         setFormData({
             name: product.name, price: product.price, category: product.category,
-            description: product.description || '', ingredients: product.ingredients.join(', '), allergens: product.allergens || []
+            description: product.description || '', 
+            ingredients: product.ingredients.join(', '), 
+            image: product.image || '', // Load existing image
+            allergens: product.allergens || []
         });
         window.scrollTo(0,0);
     };
@@ -141,6 +188,14 @@ const MenuManager = () => {
                     
                     <textarea name="description" value={formData.description} onChange={handleChange} placeholder={t('description')} className="border p-2 rounded w-full h-20" />
                     <input name="ingredients" value={formData.ingredients} onChange={handleChange} placeholder={t('ingredients_comma')} className="border p-2 rounded w-full" required />
+
+                    <div>
+                        <label className="block text-sm font-bold mb-1 text-gray-700">Upload Dish Image</label>
+                        <input type="file" accept="image/*" onChange={handleImageUpload} className="border p-2 rounded w-full bg-white" />
+                        {formData.image && (
+                            <img src={formData.image} alt="Preview" className="mt-2 h-20 w-20 object-cover rounded shadow-sm" />
+                        )}
+                    </div>
 
                     <div>
                         <span className="font-bold text-sm block mb-2">{t('allergens_label')}</span>

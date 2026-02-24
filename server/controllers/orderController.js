@@ -125,3 +125,49 @@ export const updateOrderStatus = async (req, res) => {
         res.json(order);
     } catch (error) { res.status(500).json({ message: error.message }); }
 };
+
+// Add new function
+export const closeTableAndPay = async (req, res) => {
+    try {
+        const { tableNumber, paymentMethod } = req.body; // paymentMethod could be 'VISA', 'CASH'
+        const restaurantId = req.user.restaurant;
+
+        // 1. Find the table
+        const table = await Table.findOne({ tableNumber, restaurant: restaurantId });
+        if (!table) return res.status(404).json({ message: "Table not found" });
+
+        // 2. Find all active orders for this table
+        const activeOrders = await Order.find({ 
+            tableNumber, 
+            restaurant: restaurantId,
+            status: { $in: ['pending', 'preparing', 'ready', 'served'] } 
+        });
+
+        if (activeOrders.length === 0) {
+             return res.status(400).json({ message: "No active orders found for this table." });
+        }
+
+        // 3. Mark all orders as 'paid'
+        for (let order of activeOrders) {
+            order.status = 'paid';
+            await order.save();
+        }
+
+        // 4. Update Table status back to 'available'
+        table.status = 'available';
+        table.currentOrder = null;
+        await table.save();
+
+        // 5. Emit socket events
+        const io = req.app.get('socketio');
+        const room = restaurantId.toString();
+        io.to(room).emit('table_updated', table);
+        // You might want to emit an event to clear orders from the waiter's view
+        activeOrders.forEach(o => io.to(room).emit('order_updated', o)); 
+
+        res.json({ message: `Table ${tableNumber} closed successfully. Payment processed via ${paymentMethod}.` });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

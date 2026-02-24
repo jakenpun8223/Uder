@@ -1,5 +1,5 @@
 import express from 'express';
-import { createOrder, getAllOrders, updateOrderStatus, addItemsToOrder } from '../controllers/orderController.js';
+import { createOrder, getAllOrders, updateOrderStatus, addItemsToOrder, closeTableAndPay } from '../controllers/orderController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js'; // Import protect
 
 const router = express.Router();
@@ -16,5 +16,8 @@ router.get('/', protect, authorize('kitchen', 'staff', 'admin'), getAllOrders);
 
 // CHEF: Update status
 router.patch('/:id/status', protect, authorize('kitchen', 'staff', 'admin'), updateOrderStatus);
+
+// WAITER: Close table and pay
+router.post('/checkout-table', protect, authorize('staff', 'admin'), closeTableAndPay);
 
 export default router;

@@ -14,6 +14,18 @@ const ProductCard = ({ product }) => {
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 flex flex-col justify-between hover:shadow-md transition-shadow h-full">
+            {/* New Image Rendering Section */}
+            {product.image && (
+                <div className="w-full h-48 bg-gray-100 border-b">
+                    <img 
+                        src={product.image} 
+                        alt={product.name} 
+                        className="w-full h-full object-cover"
+                    />
+                </div>
+            )}
+            {/* Added p-4 sm:p-5 to this wrapper since we removed it from the parent div */}
+            <div className="p-4 sm:p-5 flex flex-col flex-grow"></div>
             <div>
                 <div className="flex justify-between items-start mb-2">
                     <h3 className="text-lg font-bold text-gray-800 leading-tight">{product.name}</h3>

@@ -4,11 +4,43 @@ import { useWaiter } from '../context/WaiterContext';
 import { socket } from '../socket'; 
 import axios from '../api/axios';
 import { useTranslation } from 'react-i18next';
+import { CreditCard } from 'lucide-react'; // Import icon
+import toast from 'react-hot-toast';
 
 const WaiterDashboard = () => {
     const { t } = useTranslation();
     const { notifications, myTables, removeNotification } = useWaiter();
     const [myOrders, setMyOrders] = useState([]);
+    const [selectedTableToClose, setSelectedTableToClose] = useState('');
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+    // New function to handle payment
+    const handleProcessPayment = async () => {
+        if (!selectedTableToClose) return toast.error("Please select a table to close.");
+        
+        setIsProcessingPayment(true);
+        try {
+            // Mocking a Visa/NFC payment delay
+            toast.loading("Processing VISA Payment...", { id: 'payment' });
+            await new Promise(resolve => setTimeout(resolve, 1500)); 
+
+            await axios.post('/orders/checkout-table', {
+                tableNumber: parseInt(selectedTableToClose),
+                paymentMethod: 'VISA'
+            });
+
+            toast.success(`Table ${selectedTableToClose} payment successful and table closed!`, { id: 'payment' });
+            setSelectedTableToClose(''); // Reset selection
+            
+            // Note: The websocket events should automatically remove paid orders from myOrders state 
+            // and update the table status on the UI if TableSelector is listening.
+            
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Payment failed", { id: 'payment' });
+        } finally {
+            setIsProcessingPayment(false);
+        }
+    };
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -44,6 +76,31 @@ const WaiterDashboard = () => {
                     <p className="text-gray-500 mt-2">{t('select_tables_msg')}</p>
                 </header>
                 <TableSelector />
+
+                {/* NEW PAYMENT SECTION */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-8">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><CreditCard /> Process Table Payment (VISA)</h2>
+                    <div className="flex gap-4 items-center">
+                        <select 
+                            value={selectedTableToClose} 
+                            onChange={(e) => setSelectedTableToClose(e.target.value)}
+                            className="border p-2 rounded w-48"
+                        >
+                            <option value="">Select Table</option>
+                            {/* Only show tables that belong to the waiter and have active orders */}
+                            {myTables.map(t => (
+                                <option key={t} value={t}>Table {t}</option>
+                            ))}
+                        </select>
+                        <button 
+                            onClick={handleProcessPayment}
+                            disabled={!selectedTableToClose || isProcessingPayment}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50 transition"
+                        >
+                            {isProcessingPayment ? "Processing..." : "Pay & Close Table"}
+                        </button>
+                    </div>
+                </div>
             </div>
             <div className="space-y-6">
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">

@@ -3,10 +3,12 @@ import { useCart } from '../context/CartContext';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import axios from '../api/axios';
 import { useTranslation } from 'react-i18next';
+import { Plus, Minus, Trash2 } from 'lucide-react'; // Import icons
 
 const Checkout = () => {
     const { t } = useTranslation();
-    const { cart, cartTotal, removeFromCart, clearCart } = useCart();
+    // 1. Add addToCart from useCart
+    const { cart, cartTotal, removeFromCart, addToCart, clearCart } = useCart();
     const [searchParams] = useSearchParams(); 
     
     const urlTable = searchParams.get('table');
@@ -59,16 +61,32 @@ const Checkout = () => {
                                 <h4 className="font-bold text-gray-800 text-lg leading-tight">{item.name}</h4>
                                 <p className="text-sm text-gray-500 font-medium">₪{item.price} x {item.quantity}</p>
                             </div>
-                            <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto sm:space-x-4 rtl:space-x-reverse">
-                                <span className="font-bold text-gray-800 text-lg">
+                            
+                            {/* --- NEW QUANTITY CONTROLS --- */}
+                            <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto sm:space-x-6 rtl:space-x-reverse">
+                                <span className="font-bold text-gray-800 text-lg w-20 text-right">
                                     ₪{(item.price * item.quantity).toFixed(2)}
                                 </span>
-                                <button 
-                                    onClick={() => removeFromCart(item._id)}
-                                    className="text-red-500 hover:text-red-700 text-sm font-bold bg-red-50 px-3 py-1 rounded"
-                                >
-                                    {t('remove')}
-                                </button>
+                                
+                                <div className="flex items-center bg-gray-50 rounded-lg p-1 border">
+                                    <button 
+                                        type="button" // Important so it doesn't trigger form submit
+                                        onClick={() => removeFromCart(item._id)}
+                                        className="w-8 h-8 flex items-center justify-center bg-white shadow-sm border text-red-600 rounded-md hover:bg-red-50 transition"
+                                    >
+                                        {item.quantity === 1 ? <Trash2 size={16} /> : <Minus size={16} />}
+                                    </button>
+                                    
+                                    <span className="font-bold text-gray-800 text-base w-8 text-center">{item.quantity}</span>
+                                    
+                                    <button 
+                                        type="button"
+                                        onClick={() => addToCart(item)}
+                                        className="w-8 h-8 flex items-center justify-center bg-primary shadow-sm text-white rounded-md hover:bg-orange-600 transition"
+                                    >
+                                        <Plus size={16} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}

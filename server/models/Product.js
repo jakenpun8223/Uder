@@ -33,6 +33,10 @@ const productSchema = new mongoose.Schema({
         trim: true,
         required: true 
     }],
+    image: { // <--- NEW FIELD FOR BASE64 IMAGE
+        type: String,
+        default: ''
+    },
     restaurant: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Restaurant',
