@@ -1,11 +1,12 @@
 // client/src/socket.js
 import { io } from 'socket.io-client';
 
-// Use the environment variable or default to localhost
-const URL = 'http://localhost:5000';
+// Extract the base URL without '/api' for Socket.io
+const apiURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const socketURL = apiURL.replace('/api', '');
 
-export const socket = io(URL, {
+export const socket = io(socketURL, {
     withCredentials: true,
     autoConnect: true,
-    transports: ['websocket', 'polling'] // Force stable connection methods
+    transports: ['websocket', 'polling'] 
 });
