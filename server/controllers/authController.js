@@ -14,7 +14,7 @@ const sendTokenResponse = (user, statusCode, res) => {
     expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day
     httpOnly: true, // Prevents XSS attacks (cannot be accessed by JS)
     secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-    sameSite: 'strict' // CSRF protection
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // 'none' for cross-domain
   };
 
   res.status(statusCode)
