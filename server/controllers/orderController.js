@@ -126,17 +126,13 @@ export const updateOrderStatus = async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
-// Add new function
-export const closeTableAndPay = async (req, res) => {
+// REAL CLEARING COMPANY INTEGRATION (Mocked for school presentation)
+export const generatePaymentLink = async (req, res) => {
     try {
-        const { tableNumber, paymentMethod } = req.body; // paymentMethod could be 'VISA', 'CASH'
+        const { tableNumber, amount } = req.body;
         const restaurantId = req.user.restaurant;
 
-        // 1. Find the table
-        const table = await Table.findOne({ tableNumber, restaurant: restaurantId });
-        if (!table) return res.status(404).json({ message: "Table not found" });
-
-        // 2. Find all active orders for this table
+        // 1. Verify the table has active orders
         const activeOrders = await Order.find({ 
             tableNumber, 
             restaurant: restaurantId,
@@ -147,25 +143,73 @@ export const closeTableAndPay = async (req, res) => {
              return res.status(400).json({ message: "No active orders found for this table." });
         }
 
-        // 3. Mark all orders as 'paid'
+        // ==========================================
+        // REAL WORLD "חברת סליקה" API CALL GOES HERE
+        // ==========================================
+        /* // Example using an Israeli Provider API (e.g., PayPlus / Meshulam)
+        
+        const clearingResponse = await axios.post('https://api.israel-clearing.co.il/v1/generate-page', {
+            api_key: process.env.CLEARING_API_KEY,
+            amount: amount,
+            currency: 'ILS',
+            description: `Payment for Table ${tableNumber}`,
+            success_url: `http://localhost:5173/waiter?payment=success&table=${tableNumber}`,
+            cancel_url: `http://localhost:5173/waiter?payment=cancel`
+        });
+        
+        const paymentUrl = clearingResponse.data.page_url; 
+        */
+        
+        // ==========================================
+        // MOCK API FOR SCHOOL PRESENTATION
+        // ==========================================
+        // We will simulate the Clearing Company returning a secure link.
+        // For the presentation, we can redirect them to a fake success page, or back to the Waiter Dashboard with a success query parameter.
+        const mockPaymentUrl = `/waiter?simulatedPayment=true&table=${tableNumber}&amount=${amount}`;
+        
+        res.json({ paymentUrl: mockPaymentUrl });
+
+    } catch (error) {
+        console.error("Payment API Error:", error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// We also need the function that the Clearing Company calls when payment is SUCCESSFUL.
+// In real life, the clearing company sends a "Webhook" to this route.
+export const closeTableAfterPayment = async (req, res) => {
+    try {
+        const { tableNumber } = req.body;
+        const restaurantId = req.user.restaurant;
+
+        const table = await Table.findOne({ tableNumber, restaurant: restaurantId });
+        
+        const activeOrders = await Order.find({ 
+            tableNumber, 
+            restaurant: restaurantId,
+            status: { $in: ['pending', 'preparing', 'ready', 'served'] } 
+        });
+
+        // Mark all orders as paid
         for (let order of activeOrders) {
             order.status = 'paid';
             await order.save();
         }
 
-        // 4. Update Table status back to 'available'
-        table.status = 'available';
-        table.currentOrder = null;
-        await table.save();
+        // Free up the table
+        if (table) {
+            table.status = 'available';
+            table.currentOrder = null;
+            await table.save();
+        }
 
-        // 5. Emit socket events
+        // Emit socket events so the screen updates instantly
         const io = req.app.get('socketio');
         const room = restaurantId.toString();
         io.to(room).emit('table_updated', table);
-        // You might want to emit an event to clear orders from the waiter's view
         activeOrders.forEach(o => io.to(room).emit('order_updated', o)); 
 
-        res.json({ message: `Table ${tableNumber} closed successfully. Payment processed via ${paymentMethod}.` });
+        res.json({ message: `Table ${tableNumber} successfully closed.` });
 
     } catch (error) {
         res.status(500).json({ message: error.message });
