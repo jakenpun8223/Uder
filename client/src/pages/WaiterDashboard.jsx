@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import TableSelector from '../components/TableSelector';
 import { useWaiter } from '../context/WaiterContext';
 import { socket } from '../socket'; 
@@ -6,47 +6,42 @@ import axios from '../api/axios';
 import { useTranslation } from 'react-i18next';
 import { CreditCard } from 'lucide-react'; // Import icon
 import toast from 'react-hot-toast';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 const WaiterDashboard = () => {
     const { t } = useTranslation();
     const { notifications, myTables, removeNotification } = useWaiter();
     const [myOrders, setMyOrders] = useState([]);
+    const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
+    
+    // Payment State
     const [selectedTableToClose, setSelectedTableToClose] = useState('');
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-    // New function to handle payment
-    const handleProcessPayment = async () => {
-        if (!selectedTableToClose) return toast.error("Please select a table to close.");
-        
-        setIsProcessingPayment(true);
-        try {
-            // Mocking a Visa/NFC payment delay
-            toast.loading("Processing VISA Payment...", { id: 'payment' });
-            await new Promise(resolve => setTimeout(resolve, 1500)); 
-
-            await axios.post('/orders/checkout-table', {
-                tableNumber: parseInt(selectedTableToClose),
-                paymentMethod: 'VISA'
-            });
-
-            toast.success(`Table ${selectedTableToClose} payment successful and table closed!`, { id: 'payment' });
-            setSelectedTableToClose(''); // Reset selection
+    useEffect(() => {
+        // Check if we just returned from the Clearing Company
+        const isSimulatedPayment = searchParams.get('simulatedPayment');
+        const tableToClose = searchParams.get('table');
+    
+        if (isSimulatedPayment === 'true' && tableToClose) {
+            toast.success(`VISA Payment for Table ${tableToClose} Approved! Closing table...`);
             
-            // Note: The websocket events should automatically remove paid orders from myOrders state 
-            // and update the table status on the UI if TableSelector is listening.
-            
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Payment failed", { id: 'payment' });
-        } finally {
-            setIsProcessingPayment(false);
+            // Tell backend to mark it closed
+            axios.post('/orders/close-table', { tableNumber: parseInt(tableToClose) })
+                .then(() => {
+                    navigate('/waiter', { replace: true }); // Clean the URL
+                })
+                .catch(err => toast.error("Error closing table"));
         }
-    };
+    }, [searchParams, navigate]);
 
     useEffect(() => {
         const fetchOrders = async () => {
             try {
                 const { data } = await axios.get('/orders');
-                const active = data.filter(o => myTables.includes(o.tableNumber) && o.status !== 'paid' && o.status !== 'served');
+                // FIX: Keep 'served' orders visible! Only hide if 'paid' or 'cancelled'
+                const active = data.filter(o => myTables.includes(o.tableNumber) && o.status !== 'paid' && o.status !== 'cancelled');
                 setMyOrders(active);
             } catch (err) { console.error("Failed to fetch orders", err); }
         };
@@ -56,9 +51,13 @@ const WaiterDashboard = () => {
         const handleUpdate = (updatedOrder) => {
             setMyOrders(prev => {
                 if (myTables.includes(updatedOrder.tableNumber)) {
+                    // FIX: Remove order from screen ONLY if it was marked as paid
+                    if (updatedOrder.status === 'paid' || updatedOrder.status === 'cancelled') {
+                        return prev.filter(o => o._id !== updatedOrder._id);
+                    }
                     const exists = prev.find(o => o._id === updatedOrder._id);
                     if (exists) return prev.map(o => o._id === updatedOrder._id ? updatedOrder : o);
-                    else if (['pending', 'preparing', 'ready'].includes(updatedOrder.status)) return [updatedOrder, ...prev];
+                    else return [updatedOrder, ...prev]; // Add new ones
                 }
                 return prev;
             });
@@ -67,6 +66,39 @@ const WaiterDashboard = () => {
         socket.on('new_order', handleUpdate); 
         return () => { socket.off('order_updated', handleUpdate); socket.off('new_order', handleUpdate); };
     }, [myTables]);
+
+    // FIX: Calculate the grand total dynamically for the selected table
+    const grandTotal = useMemo(() => {
+        if (!selectedTableToClose) return 0;
+        const tableOrders = myOrders.filter(o => o.tableNumber === parseInt(selectedTableToClose));
+        return tableOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    }, [selectedTableToClose, myOrders]);
+
+
+    // REAL PAYMENT REDIRECT FUNCTION
+    const handleProcessPayment = async () => {
+        if (!selectedTableToClose || grandTotal === 0) return toast.error("No active orders for this table.");
+        
+        setIsProcessingPayment(true);
+        toast.loading("Connecting to Clearing Company...", { id: 'payment' });
+        
+        try {
+            // Call the backend to generate the real payment link
+            const { data } = await axios.post('/orders/generate-payment', {
+                tableNumber: parseInt(selectedTableToClose),
+                amount: grandTotal
+            });
+
+            toast.success("Redirecting to secure payment...", { id: 'payment' });
+            
+            // Redirect the waiter to the actual clearing company page (Tranzila/PayPlus/etc.)
+            window.location.href = data.paymentUrl;
+            
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Payment setup failed", { id: 'payment' });
+            setIsProcessingPayment(false);
+        }
+    };
 
     return (
         <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -77,27 +109,37 @@ const WaiterDashboard = () => {
                 </header>
                 <TableSelector />
 
-                {/* NEW PAYMENT SECTION */}
+                {/* PAYMENT SECTION */}
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-8">
-                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><CreditCard /> Process Table Payment (VISA)</h2>
-                    <div className="flex gap-4 items-center">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        <CreditCard /> Checkout Table
+                    </h2>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                         <select 
                             value={selectedTableToClose} 
                             onChange={(e) => setSelectedTableToClose(e.target.value)}
-                            className="border p-2 rounded w-48"
+                            className="border border-gray-300 p-3 rounded-lg w-full sm:w-48 font-bold"
                         >
                             <option value="">Select Table</option>
-                            {/* Only show tables that belong to the waiter and have active orders */}
-                            {myTables.map(t => (
-                                <option key={t} value={t}>Table {t}</option>
+                            {/* Get unique table numbers from active orders */}
+                            {[...new Set(myOrders.map(o => o.tableNumber))].map(tNum => (
+                                <option key={tNum} value={tNum}>Table {tNum}</option>
                             ))}
                         </select>
+                        
+                        {selectedTableToClose && (
+                            <div className="text-lg">
+                                Total to pay: <span className="font-black text-primary text-2xl">₪{grandTotal.toFixed(2)}</span>
+                            </div>
+                        )}
+
                         <button 
                             onClick={handleProcessPayment}
-                            disabled={!selectedTableToClose || isProcessingPayment}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg disabled:opacity-50 transition"
+                            disabled={!selectedTableToClose || isProcessingPayment || grandTotal === 0}
+                            className="bg-green-600 hover:bg-green-700 text-white font-black py-3 px-6 rounded-lg disabled:opacity-50 transition w-full sm:w-auto shadow-md"
                         >
-                            {isProcessingPayment ? "Processing..." : "Pay & Close Table"}
+                            {isProcessingPayment ? "Loading..." : "Pay via VISA"}
                         </button>
                     </div>
                 </div>
